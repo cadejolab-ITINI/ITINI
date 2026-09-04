@@ -1,62 +1,125 @@
-import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { useEffect, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import { Camera, GeoJSONSource, Layer, Map, Marker } from '@maplibre/maplibre-react-native';
+import type { StyleSpecification } from '@maplibre/maplibre-react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
-import { googleDarkMapStyle } from './google-dark-style';
 import type { EsteliMapProps } from './map-types';
 import { UserLocationDot } from './UserLocationDot';
 
-const ESTELI_REGION = {
-  latitude: 13.045,
-  longitude: -86.365,
-  latitudeDelta: 0.14,
-  longitudeDelta: 0.12,
+const ESTELI_CENTER: [number, number] = [-86.365, 13.045];
+
+// OpenStreetMap raster tiles are loaded directly by MapLibre Native.
+// The attribution is part of the style so it remains visible in the native map.
+const OSM_STYLE: StyleSpecification = {
+  version: 8,
+  name: 'ITINI OpenStreetMap',
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+    },
+  },
+  layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm', paint: { 'raster-opacity': 1 } }],
 };
 
+const OSM_OFFLINE_STYLE: StyleSpecification = {
+  version: 8,
+  name: 'ITINI OpenStreetMap offline',
+  sources: {},
+  layers: [{ id: 'offline-background', type: 'background', paint: { 'background-color': colors.background } }],
+};
+
+const toLngLat = (point: { latitude: number; longitude: number }): [number, number] => [point.longitude, point.latitude];
+
 export function EsteliMap({ destinations, selected, userLocation, onDestinationPress, onMapPress, recenterToken, route, offline }: EsteliMapProps) {
-  const map = useRef<MapView>(null);
-  const latestLocation = useRef(userLocation);
-  latestLocation.current = userLocation;
+  const camera = useRef<React.ElementRef<typeof Camera>>(null);
+
+  const routeData = useMemo(() => route ? ({
+    type: 'Feature' as const,
+    properties: {},
+    geometry: { type: 'LineString' as const, coordinates: [route.origin, ...route.coordinates, route.destination].map(toLngLat) },
+  }) : null, [route]);
+
+  const routeAccessData = useMemo(() => route ? ({
+    type: 'Feature' as const,
+    properties: {},
+    geometry: {
+      type: 'MultiLineString' as const,
+      coordinates: [
+        [toLngLat(route.origin), toLngLat(route.coordinates[0])],
+        [toLngLat(route.coordinates[route.coordinates.length - 1]), toLngLat(route.destination)],
+      ],
+    },
+  }) : null, [route]);
+
+  const routeBounds = useMemo(() => {
+    if (!route) return null;
+    const points = [route.origin, ...route.coordinates, route.destination];
+    const longitudes = points.map((point) => point.longitude);
+    const latitudes = points.map((point) => point.latitude);
+    return [Math.min(...longitudes), Math.min(...latitudes), Math.max(...longitudes), Math.max(...latitudes)] as [number, number, number, number];
+  }, [route]);
+
   useEffect(() => {
-    const point = latestLocation.current;
-    if (point && recenterToken > 0) map.current?.animateToRegion({ ...point, latitudeDelta: 0.012, longitudeDelta: 0.012 }, 450);
-  }, [recenterToken]);
+    if (userLocation && recenterToken > 0) camera.current?.easeTo({ center: toLngLat(userLocation), zoom: 15, duration: 450 });
+  }, [recenterToken, userLocation]);
+
   useEffect(() => {
-    if (route) map.current?.fitToCoordinates([route.origin, ...route.coordinates, route.destination], { edgePadding: { top: 160, right: 90, bottom: 150, left: 40 }, animated: true });
-    else if (selected) map.current?.animateToRegion({ ...selected, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450);
-  }, [route, selected]);
+    if (route && routeBounds) camera.current?.fitBounds(routeBounds, { padding: { top: 160, right: 90, bottom: 150, left: 40 }, duration: 450 });
+    else if (selected) camera.current?.easeTo({ center: toLngLat(selected), zoom: 14, duration: 450 });
+  }, [route, routeBounds, selected]);
+
   return (
-    <MapView
-      ref={map}
+    <Map
       style={styles.map}
-      provider={PROVIDER_GOOGLE}
-      initialRegion={ESTELI_REGION}
-      customMapStyle={googleDarkMapStyle}
-      mapType={offline ? 'none' : 'standard'}
+      mapStyle={offline ? OSM_OFFLINE_STYLE : OSM_STYLE}
+      attribution
+      attributionPosition={{ bottom: 8, left: 8 }}
+      logo={false}
+      compass={false}
+      scaleBar={false}
       onPress={onMapPress}
-      onPanDrag={onMapPress}
-      showsUserLocation={false}
-      showsMyLocationButton={false}
       accessibilityLabel="Mapa interactivo de destinos de Estelí"
     >
-      {userLocation && userLocation.accuracy != null && userLocation.accuracy > 0 && <Circle center={userLocation} radius={userLocation.accuracy} fillColor="rgba(66,133,244,0.09)" strokeColor="rgba(66,133,244,0.25)" strokeWidth={1} />}
-      {userLocation && <Marker coordinate={userLocation} anchor={{ x: 0.5, y: 0.5 }} zIndex={1000} tracksViewChanges tappable={false}><UserLocationDot /></Marker>}
-      {destinations.map((destination) => (
+      <Camera ref={camera} initialViewState={{ center: ESTELI_CENTER, zoom: 11.8 }} />
+
+      {routeData && (
+        <GeoJSONSource id="itini-route" data={routeData}>
+          <Layer id="itini-route-line" type="line" source="itini-route" paint={{ 'line-color': colors.sky, 'line-width': 5, 'line-opacity': 0.95 }} />
+        </GeoJSONSource>
+      )}
+      {routeAccessData && (
+        <GeoJSONSource id="itini-route-access" data={routeAccessData}>
+          <Layer id="itini-route-access-line" type="line" source="itini-route-access" paint={{ 'line-color': colors.orange, 'line-width': 3, 'line-dasharray': [1.5, 2.5], 'line-opacity': 0.9 }} />
+        </GeoJSONSource>
+      )}
+
+      {userLocation && (
+        <Marker lngLat={toLngLat(userLocation)} id="itini-user-location" anchor="center">
+          <View pointerEvents="none"><UserLocationDot /></View>
+        </Marker>
+      )}
+
+      {destinations.map((destination, index) => (
         <Marker
           key={destination.id}
-          coordinate={{ latitude: destination.latitude, longitude: destination.longitude }}
-          title={destination.name}
-          description={`${destination.difficulty} · Sostenibilidad ${destination.sustainabilityScore}/100`}
-          pinColor={destination.id === selected?.id ? colors.orange : colors.emerald}
-          onPress={(event) => { event.stopPropagation(); onDestinationPress(destination); }}
-        />
+          id={`destination-${destination.id}`}
+          lngLat={toLngLat(destination)}
+          anchor="center"
+          onPress={(event) => { event.stopPropagation?.(); onDestinationPress(destination); }}
+        >
+          <View accessible accessibilityRole="button" accessibilityLabel={`Ver ${destination.name}`} style={[styles.destinationMarker, { backgroundColor: [colors.orange, colors.emerald, colors.sky][index % 3] }, destination.id === selected?.id && styles.destinationMarkerSelected]} />
+        </Marker>
       ))}
-      {route && <Polyline coordinates={route.coordinates} strokeColor={colors.sky} strokeWidth={5} />}
-      {route && <Polyline coordinates={[route.origin, route.coordinates[0]]} strokeColor={colors.orange} strokeWidth={3} lineDashPattern={[4, 7]} />}
-      {route && <Polyline coordinates={[route.coordinates[route.coordinates.length - 1], route.destination]} strokeColor={colors.orange} strokeWidth={3} lineDashPattern={[4, 7]} />}
-    </MapView>
+    </Map>
   );
 }
 
-const styles = StyleSheet.create({ map: { flex: 1 } });
+const styles = StyleSheet.create({
+  map: { flex: 1 },
+  destinationMarker: { width: 18, height: 18, borderRadius: 9, borderWidth: 3, borderColor: colors.white },
+  destinationMarkerSelected: { width: 24, height: 24, borderRadius: 12, borderWidth: 4 },
+});

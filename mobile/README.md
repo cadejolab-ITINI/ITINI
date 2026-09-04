@@ -18,7 +18,9 @@ Atajos de Expo:
 
 ## Variables
 
-Copie `.env.example` a `.env.local`. Supabase es opcional en el MVP porque SQLite es la fuente local. `GOOGLE_MAPS_ANDROID_API_KEY` sí es necesaria para un APK Android independiente con cartografía de Google.
+Copie `.env.example` a `.env.local`. Supabase es opcional en el MVP porque SQLite es la fuente local. No se requieren claves de Google Maps: Android/iOS usan MapLibre Native con tiles de OpenStreetMap y web usa Leaflet con OpenStreetMap.
+
+MapLibre agrega código nativo, así que la APK debe generarse como development build o preview con EAS; no funciona dentro de Expo Go. Revise [docs/openstreetmap.md](docs/openstreetmap.md) para la atribución y la política de uso de tiles.
 
 ## Comandos de calidad
 
