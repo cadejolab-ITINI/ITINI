@@ -14,7 +14,6 @@ export function DemoWelcomeModal({ visible, onClose, onContinue }: Props) {
         <View style={styles.card} accessibilityViewIsModal>
           <LinearGradient colors={['#10C985', '#13AEE4', '#FF741B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.accent} />
           <ScrollView contentContainerStyle={styles.content} bounces={false}>
-            <View style={styles.icon}><MaterialCommunityIcons name="compass-outline" size={34} color="#20D49B" /></View>
             <Text style={styles.eyebrow}>ITINI · VERSIÓN DEMO</Text>
             <Text accessibilityRole="header" style={styles.title}>Un primer vistazo{ '\n' }a tu próxima aventura</Text>
             <Text style={styles.description}>Estás por explorar una versión de demostración de ITINI. Aún estamos construyendo la experiencia completa para acompañarte a descubrir Nicaragua.</Text>
@@ -42,7 +41,6 @@ const styles = StyleSheet.create({
   card: { width: '100%', maxWidth: 410, maxHeight: '95%', borderRadius: 26, overflow: 'hidden', backgroundColor: '#0C152A', borderWidth: 1, borderColor: '#24334B' },
   accent: { height: 4 },
   content: { padding: 24, alignItems: 'center' },
-  icon: { width: 68, height: 68, borderRadius: 22, backgroundColor: 'rgba(16,201,133,0.12)', borderWidth: 1, borderColor: 'rgba(16,201,133,0.28)', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   eyebrow: { fontFamily: font.extraBold, color: '#20D49B', fontSize: 11, letterSpacing: 1.4, textAlign: 'center' },
   title: { fontFamily: font.black, color: '#FFFFFF', fontSize: 26, lineHeight: 32, textAlign: 'center', marginTop: 12 },
   description: { fontFamily: font.regular, color: '#A9C4E0', fontSize: 15, lineHeight: 23, textAlign: 'center', marginTop: 16 },
