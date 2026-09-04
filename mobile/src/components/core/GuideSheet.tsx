@@ -4,23 +4,30 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ItiniBottomSheet } from '@/components/core/ItiniBottomSheet';
-import { guides, type Guide } from '@/data/core';
+import type { Guide } from '@/database/catalog';
+import { useAppData } from '@/providers/AppDataProvider';
 import { font } from '@/constants/theme';
 
 export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { guides } = useAppData();
   const [selected, setSelected] = useState<Guide | null>(null);
+  const [error, setError] = useState('');
 
-  const message = (guide: Guide) => Linking.openURL(`sms:${guide.phone}?body=${encodeURIComponent('Hola, te contacto desde ITINI para conocer disponibilidad.')}`);
-  const call = (guide: Guide) => Linking.openURL(`tel:${guide.phone}`);
+  const contact = async (guide: Guide, channel: 'sms' | 'tel') => {
+    if (!guide.phone || guide.verificationStatus === 'demo') return;
+    try { await Linking.openURL(`${channel}:${guide.phone}`); }
+    catch { setError('No se pudo abrir la aplicación de contacto en este dispositivo.'); }
+  };
+  const canContact = !!selected?.phone && selected.verificationStatus !== 'demo';
 
   return (
-    <ItiniBottomSheet visible={visible} onClose={onClose} title="Guías Locales" badge="DIRECTORIO INTUR" icon="account-group-outline" accent="#08A8F7">
+    <ItiniBottomSheet visible={visible} onClose={onClose} title="Guías Locales" badge="DIRECTORIO · VERIFICACIÓN PENDIENTE" icon="account-group-outline" accent="#08A8F7">
       {!selected ? (
         <View style={styles.list}>
           {guides.map((guide) => (
             <Pressable key={guide.id} onPress={() => setSelected(guide)} style={styles.guideCard}>
               <View style={styles.guideCopy}>
-                <View style={styles.nameRow}><Text style={styles.name}>{guide.name}</Text><Text style={styles.verified}>ITINI Verified</Text></View>
+                <View style={styles.nameRow}><Text style={styles.name}>{guide.name}</Text><Text style={styles.verified}>{guide.verificationStatus === 'demo' ? 'Perfil demo' : 'Verificado'}</Text></View>
                 <Text style={styles.base}>{guide.base}</Text>
               </View>
               <Text style={styles.rating}>★ {guide.rating.toFixed(1)}</Text>
@@ -37,9 +44,11 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
             <Text style={styles.skillsTitle}>HABILIDADES DURAS:</Text>
             <View style={styles.skills}>{selected.skills.map((skill) => <View style={styles.skill} key={skill}><Text style={styles.skillText}>{skill}</Text></View>)}</View>
             <View style={styles.actions}>
-              <Pressable onPress={() => message(selected)} style={[styles.action, styles.message]}><Text style={styles.actionText}>Mensaje</Text></Pressable>
-              <Pressable onPress={() => call(selected)} style={[styles.action, styles.call]}><Text style={styles.actionText}>Llamar</Text></Pressable>
+              <Pressable disabled={!canContact} onPress={() => contact(selected, 'sms')} style={[styles.action, styles.message, !canContact && { opacity: 0.4 }]}><Text style={styles.actionText}>Mensaje</Text></Pressable>
+              <Pressable disabled={!canContact} onPress={() => contact(selected, 'tel')} style={[styles.action, styles.call, !canContact && { opacity: 0.4 }]}><Text style={styles.actionText}>Llamar</Text></Pressable>
             </View>
+            {!canContact && <Text style={styles.base}>Datos de ejemplo. Contacto desactivado hasta validar identidad, credencial y teléfono.</Text>}
+            {!!error && <Text accessibilityRole="alert" style={styles.base}>{error}</Text>}
           </View>
         </View>
       )}

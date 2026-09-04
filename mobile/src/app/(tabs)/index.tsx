@@ -30,13 +30,14 @@ const quickMenus = [
 ];
 
 export default function MapScreen() {
-  const { destinations, profile } = useAppData();
+  const { destinations, profile, settings, updateSetting } = useAppData();
   const { location, permission, canAskAgain, servicesEnabled, loading: locating, error: locationError, start, stop } = useUserLocation(false);
   const [selected, setSelected] = useState<Destination | null>(null);
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [offline, setOffline] = useState(false);
+  const offline = settings.offlineMode;
+  const setOffline = (value: boolean) => { void updateSetting('offlineMode', value); };
   const [sheet, setSheet] = useState<ActiveSheet>(null);
   const [toast, setToast] = useState(false);
   const [route, setRoute] = useState<RoadRoute | null>(null);

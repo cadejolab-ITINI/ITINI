@@ -6,7 +6,7 @@ import { font } from '@/constants/theme';
 import { useAppData } from '@/providers/AppDataProvider';
 
 export default function ProfileScreen() {
-  const { profile, updateProfile, communityPosts } = useAppData();
+  const { profile, updateProfile, stats } = useAppData();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
@@ -19,7 +19,7 @@ export default function ProfileScreen() {
 
   const save = async () => {
     if (!name.trim()) return;
-    await updateProfile({ ...profile, name: name.trim(), bio: bio.trim() });
+    if (!await updateProfile({ ...profile, name: name.trim(), bio: bio.trim() })) return;
     setEditing(false);
   };
 
@@ -38,9 +38,9 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.stats}>
-          <Stat value="14" label="Rutas Hechas" color="#20D5A0" />
-          <Stat value="8" label="Verificaciones" color="#24BDF4" />
-          <Stat value={String(Math.max(12, communityPosts.length))} label="Reseñas" color="#FF7A2A" />
+          <Stat value={String(stats.visits)} label="Visitas registradas" color="#20D5A0" />
+          <Stat value="—" label="Verificaciones pendientes" color="#24BDF4" />
+          <Stat value={String(stats.reviews)} label="Reseñas propias nuevas" color="#FF7A2A" />
         </View>
       </ScrollView>
     </Screen>

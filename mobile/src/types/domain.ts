@@ -52,10 +52,11 @@ export type UserLocation = Coordinate & { accuracy: number | null; timestamp: nu
 export type SosEvent = {
   id: string;
   mode: 'demo' | 'institutional';
-  status: 'simulated' | 'queued' | 'sent' | 'failed';
+  status: 'simulated' | 'queued' | 'sent' | 'failed' | 'canceled';
   latitude: number;
   longitude: number;
   accuracy: number | null;
+  locationTimestamp?: string;
   createdAt: string;
 };
 

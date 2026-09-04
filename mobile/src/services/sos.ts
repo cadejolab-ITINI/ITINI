@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { insertSosEvent } from '@/database/repositories';
+import { newId } from '@/database/ids';
 import type { SosEvent, UserLocation } from '@/types/domain';
 
 export interface SosGateway {
@@ -15,13 +16,14 @@ export class DemoSosGateway implements SosGateway {
 
   async trigger(location: UserLocation) {
     const event: SosEvent = {
-      id: `sos-demo-${Date.now()}`,
+      id: newId(),
       mode: 'demo',
       status: 'simulated',
       latitude: location.latitude,
       longitude: location.longitude,
       accuracy: location.accuracy,
       createdAt: new Date().toISOString(),
+      locationTimestamp: new Date(location.timestamp).toISOString(),
     };
     await insertSosEvent(this.db, event);
     return event;

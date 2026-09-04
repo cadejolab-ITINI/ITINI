@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ItiniBottomSheet } from '@/components/core/ItiniBottomSheet';
-import { verifiedPrices } from '@/data/core';
 import { font } from '@/constants/theme';
 import { useAppData } from '@/providers/AppDataProvider';
 import type { BudgetCategory } from '@/types/domain';
@@ -11,19 +10,19 @@ import type { BudgetCategory } from '@/types/domain';
 type Tab = 'Verificados' | 'Calculadora' | 'Recomendación';
 
 export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean; onClose: () => void; initialTab?: Tab }) {
-  const { budgetItems, addBudgetItem, removeBudgetItem } = useAppData();
+  const { budgetItems, prices, addBudgetItem, removeBudgetItem, error } = useAppData();
   const [tab, setTab] = useState<Tab>('Verificados');
   useEffect(() => { if (visible && initialTab) setTab(initialTab); }, [visible, initialTab]);
   const [itemName, setItemName] = useState('');
   const [amount, setAmount] = useState('');
   const [budget, setBudget] = useState('');
   const [recommendation, setRecommendation] = useState<string | null>(null);
-  const total = useMemo(() => budgetItems.reduce((sum, item) => sum + item.amount, 0), [budgetItems]);
+  const total = useMemo(() => budgetItems.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) / 100, [budgetItems]);
 
   const addManualCost = async () => {
     const value = Number(amount.replace(',', '.'));
     if (!itemName.trim() || !Number.isFinite(value) || value <= 0) return;
-    await addBudgetItem(itemName, value, 'Otro');
+    if (!await addBudgetItem(itemName, value, 'Otro')) return;
     setItemName('');
     setAmount('');
   };
@@ -31,13 +30,8 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
   const buildRecommendation = () => {
     const available = Number(budget.replace(',', '.'));
     if (!Number.isFinite(available) || available <= 0) return;
-    if (available >= 1000) {
-      setRecommendation('Con C$ 1,000 podés visitar La Estanzuela, almorzar en La Garnacha, cubrir transporte y reservar un guía certificado. Estimado: C$ 940.');
-    } else if (available >= 550) {
-      setRecommendation('Con este presupuesto, ITINI recomienda Cascada La Estanzuela: entrada, transporte colectivo y una comida local. Estimado: C$ 290.');
-    } else {
-      setRecommendation('Para aprovechar mejor tu presupuesto, elegí una ruta fácil cercana y compartí traslado. ITINI te mostrará opciones verificadas debajo de C$ 300.');
-    }
+    const options = prices.filter(price => price.amount <= available);
+    setRecommendation(options.length ? `Referencias del catálogo dentro de tu presupuesto: ${options.map(price => `${price.name}: C$ ${price.amount}`).join('; ')}. Son opciones individuales, no un itinerario completo. Confirmá vigencia, traslados y disponibilidad; los datos demo no son cotizaciones ni reservas.` : 'No hay precios del catálogo dentro de este presupuesto. No podemos asegurar un itinerario con la información disponible.');
   };
 
   return (
@@ -52,12 +46,12 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
 
       {tab === 'Verificados' && (
         <View style={styles.section}>
-          <Text style={styles.helper}>Precios reales auditados por guías ITINI:</Text>
-          {verifiedPrices.map((item) => (
+          <Text style={styles.helper}>Catálogo guardado. Los precios demo no están verificados:</Text>
+          {prices.map((item) => (
             <View style={styles.priceCard} key={item.id}>
               <View style={styles.priceCopy}>
                 <Text style={styles.priceName}>{item.name}</Text>
-                <Text style={styles.verified}>◉ ITINI Verified</Text>
+                <Text style={styles.verified}>{item.verificationStatus === 'demo' ? '◉ Precio demo · confirmar' : '◉ Precio verificado'}</Text>
               </View>
               <Pressable onPress={() => addBudgetItem(item.name, item.amount, item.category)} style={styles.addVerified}>
                 <Text style={styles.addVerifiedText}>+ C$ {item.amount}</Text>
@@ -101,6 +95,7 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
           {recommendation && <View style={styles.recommendation}><Text style={styles.recommendationTitle}>Plan ITINI sugerido</Text><Text style={styles.recommendationText}>{recommendation}</Text></View>}
         </View>
       )}
+      {error && <Text accessibilityRole="alert" style={[styles.helper, { color: '#B22B39', marginTop: 12 }]}>{error}</Text>}
     </ItiniBottomSheet>
   );
 }

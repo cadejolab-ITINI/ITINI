@@ -9,7 +9,7 @@ import { useAppData } from '@/providers/AppDataProvider';
 import type { CommunityPost } from '@/types/domain';
 
 export default function CommunityScreen() {
-  const { destinations, profile, communityPosts, addCommunityPost, toggleCommunityLike, addCommunityComment } = useAppData();
+  const { destinations, profile, communityPosts, addCommunityPost, toggleCommunityLike, addCommunityComment, settings } = useAppData();
   const [destinationId, setDestinationId] = useState('estanzuela');
   const [destinationOpen, setDestinationOpen] = useState(false);
   const [rating, setRating] = useState(5);
@@ -42,7 +42,7 @@ export default function CommunityScreen() {
       photoUri,
       createdAt: new Date().toISOString(),
     };
-    await addCommunityPost(post);
+    if (!await addCommunityPost(post)) return;
     setText('');
     setPhotoUri(null);
   };
@@ -80,7 +80,7 @@ export default function CommunityScreen() {
               <Text style={styles.postTime}>Reciente</Text>
             </View>
             <View style={styles.destinationRating}><Text style={styles.postDestination}>{post.destinationName}</Text><Text style={styles.postRating}>★ {post.rating.toFixed(1)}</Text></View>
-            {post.photoUri && <Image source={{ uri: post.photoUri }} style={styles.postPhoto} />}
+            {post.photoUri && !settings.reducedData && <Image source={{ uri: post.photoUri }} style={styles.postPhoto} />}
             <Text style={styles.postText}>{post.text}</Text>
             <View style={styles.socialRow}>
               <Pressable onPress={() => toggleCommunityLike(post.id)} style={styles.socialButton}><MaterialCommunityIcons name={post.liked ? 'heart' : 'heart-outline'} size={18} color={post.liked ? '#F0444D' : '#8FA5C0'} /><Text style={styles.socialText}>{post.likes}</Text></Pressable>
@@ -89,7 +89,7 @@ export default function CommunityScreen() {
             {post.comments.length > 0 && <View style={styles.comments}>{post.comments.map((comment) => <Text key={comment.id} style={styles.comment}><Text style={styles.commentAuthor}>{comment.author}: </Text>{comment.text}</Text>)}</View>}
             <View style={styles.commentRow}>
               <TextInput value={comments[post.id] ?? ''} onChangeText={(value) => setComments((current) => ({ ...current, [post.id]: value }))} placeholder="Escribe un comentario…" placeholderTextColor="#7890AC" style={styles.commentInput} />
-              <Pressable onPress={async () => { await addCommunityComment(post.id, profile?.name ?? 'Usuario ITINI', comments[post.id] ?? ''); setComments((current) => ({ ...current, [post.id]: '' })); }} style={styles.sendButton}><MaterialCommunityIcons name="send-outline" size={20} color="#FFFFFF" /></Pressable>
+              <Pressable onPress={async () => { if (await addCommunityComment(post.id, profile?.name ?? 'Usuario ITINI', comments[post.id] ?? '')) setComments((current) => ({ ...current, [post.id]: '' })); }} style={styles.sendButton}><MaterialCommunityIcons name="send-outline" size={20} color="#FFFFFF" /></Pressable>
             </View>
           </View>
         ))}

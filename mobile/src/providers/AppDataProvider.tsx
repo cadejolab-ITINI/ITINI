@@ -1,129 +1,65 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
-
-import {
-  deleteBudgetItem,
-  insertCommunityPost,
-  insertBudgetItem,
-  listCommunityPosts,
-  listBudgetItems,
-  listDestinations,
-  getProfile,
-  saveProfile,
-  saveCommunityPostState,
-} from '@/database/repositories';
+import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import * as repository from '@/database/repositories';
+import * as catalog from '@/database/catalog';
+import { newId } from '@/database/ids';
+import { serializeDatabase } from '@/database/transactions';
 import type { BudgetCategory, BudgetItem, CommunityPost, Destination, Profile } from '@/types/domain';
 
-type AppDataContextValue = {
-  destinations: Destination[];
-  budgetItems: BudgetItem[];
-  profile: Profile | null;
-  communityPosts: CommunityPost[];
-  loading: boolean;
-  refresh: () => Promise<void>;
-  addBudgetItem: (name: string, amount: number, category: BudgetCategory) => Promise<void>;
-  removeBudgetItem: (id: string) => Promise<void>;
-  updateProfile: (profile: Profile) => Promise<void>;
-  addCommunityPost: (post: CommunityPost) => Promise<void>;
-  toggleCommunityLike: (id: string) => Promise<void>;
-  addCommunityComment: (id: string, author: string, text: string) => Promise<void>;
+type Snapshot = {
+  destinations: Destination[]; budgetItems: BudgetItem[]; profile: Profile | null; communityPosts: CommunityPost[];
+  guides: catalog.Guide[]; prices: catalog.CatalogPrice[]; settings: catalog.Settings; stats: catalog.ProfileStats;
 };
-
+type AppDataContextValue = Snapshot & {
+  loading: boolean; error: string | null; refresh: () => Promise<void>;
+  addBudgetItem: (name: string, amount: number, category: BudgetCategory) => Promise<boolean>;
+  removeBudgetItem: (id: string) => Promise<boolean>;
+  updateProfile: (profile: Profile) => Promise<boolean>;
+  addCommunityPost: (post: CommunityPost) => Promise<boolean>;
+  toggleCommunityLike: (id: string) => Promise<boolean>;
+  addCommunityComment: (id: string, author: string, text: string) => Promise<boolean>;
+  addTripPlan: (destinationId: string, people: number, extras: number) => Promise<boolean>;
+  updateSetting: (key: keyof catalog.Settings, value: boolean) => Promise<boolean>;
+};
 const AppDataContext = createContext<AppDataContextValue | null>(null);
-
 export function AppDataProvider({ children }: PropsWithChildren) {
   const db = useSQLiteContext();
-  const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([]);
+  const [data, setData] = useState<Snapshot>({ destinations: [], budgetItems: [], profile: null, communityPosts: [], guides: [], prices: [], settings: { offlineMode: false, reducedData: false }, stats: { visits: 0, reviews: 0 } });
   const [loading, setLoading] = useState(true);
-
-  const refresh = useCallback(async () => {
-    const [nextDestinations, nextBudget, nextProfile, nextPosts] = await Promise.all([
-      listDestinations(db),
-      listBudgetItems(db),
-      getProfile(db),
-      listCommunityPosts(db),
+  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(() => serializeDatabase(db, async () => {
+    const [destinations, budgetItems, profile, communityPosts, guides, prices, settings, stats] = await Promise.all([
+      repository.listDestinations(db), repository.listBudgetItems(db), repository.getProfile(db), repository.listCommunityPosts(db),
+      catalog.listGuides(db), catalog.listPrices(db), catalog.getSettings(db), catalog.getProfileStats(db),
     ]);
-    setDestinations(nextDestinations);
-    setBudgetItems(nextBudget);
-    setProfile(nextProfile);
-    setCommunityPosts(nextPosts);
-    setLoading(false);
-  }, [db]);
-
-  useEffect(() => {
-    refresh().catch((error) => {
-      console.error('No se pudo cargar la base local de ITINI', error);
-      setLoading(false);
-    });
-  }, [refresh]);
-
-  const addBudgetItem = useCallback(async (name: string, amount: number, category: BudgetCategory) => {
-    const item: BudgetItem = {
-      id: `budget-${Date.now()}`,
-      name: name.trim(),
-      amount,
-      category,
-      createdAt: new Date().toISOString(),
-    };
-    await insertBudgetItem(db, item);
-    setBudgetItems((current) => [...current, item]);
-  }, [db]);
-
-  const removeBudgetItem = useCallback(async (id: string) => {
-    await deleteBudgetItem(db, id);
-    setBudgetItems((current) => current.filter((item) => item.id !== id));
-  }, [db]);
-
-  const updateProfile = useCallback(async (nextProfile: Profile) => {
-    await saveProfile(db, nextProfile);
-    setProfile(nextProfile);
-  }, [db]);
-
-  const addCommunityPost = useCallback(async (post: CommunityPost) => {
-    await insertCommunityPost(db, post);
-    setCommunityPosts((current) => [post, ...current]);
-  }, [db]);
-
-  const toggleCommunityLike = useCallback(async (id: string) => {
-    const current = communityPosts.find((post) => post.id === id);
-    if (!current) return;
-    const next = { ...current, liked: !current.liked, likes: current.likes + (current.liked ? -1 : 1) };
-    await saveCommunityPostState(db, next);
-    setCommunityPosts((posts) => posts.map((post) => post.id === id ? next : post));
-  }, [communityPosts, db]);
-
-  const addCommunityComment = useCallback(async (id: string, author: string, text: string) => {
-    const current = communityPosts.find((post) => post.id === id);
-    if (!current || !text.trim()) return;
-    const next = {
-      ...current,
-      comments: [...current.comments, { id: `comment-${Date.now()}`, author, text: text.trim() }],
-    };
-    await saveCommunityPostState(db, next);
-    setCommunityPosts((posts) => posts.map((post) => post.id === id ? next : post));
-  }, [communityPosts, db]);
-
-  const value = useMemo<AppDataContextValue>(() => ({
-    destinations,
-    budgetItems,
-    profile,
-    communityPosts,
-    loading,
-    refresh,
-    addBudgetItem,
-    removeBudgetItem,
-    updateProfile,
-    addCommunityPost,
-    toggleCommunityLike,
-    addCommunityComment,
-  }), [destinations, budgetItems, profile, communityPosts, loading, refresh, addBudgetItem, removeBudgetItem, updateProfile, addCommunityPost, toggleCommunityLike, addCommunityComment]);
-
-  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
+    if (!profile) throw new Error('No se encontró el perfil local. No se borraron tus datos.');
+    setData({ destinations, budgetItems, profile, communityPosts, guides, prices, settings, stats });
+  }), [db]);
+  const report = (cause: unknown) => setError(cause instanceof Error ? cause.message : 'No se pudieron guardar los datos. Intentá nuevamente.');
+  const refresh = useCallback(async () => {
+    try { await load(); setError(null); } catch (cause) { report(cause); } finally { setLoading(false); }
+  }, [load]);
+  useEffect(() => { void refresh(); }, [refresh]);
+  // A successful write is never reported as failed if only refreshing the UI fails.
+  const mutate = async (operation: () => Promise<unknown>): Promise<boolean> => {
+    try { await operation(); } catch (cause) { report(cause); return false; }
+    await refresh();
+    return true;
+  };
+  const value: AppDataContextValue = {
+    ...data, loading, error, refresh,
+    addBudgetItem: (name, amount, category) => mutate(() => repository.insertBudgetItem(db, { id: newId(), name, amount, category, createdAt: new Date().toISOString() })),
+    removeBudgetItem: id => mutate(() => repository.deleteBudgetItem(db, id)),
+    updateProfile: profile => mutate(() => repository.saveProfile(db, profile)),
+    addCommunityPost: post => mutate(() => repository.insertCommunityPost(db, { ...post, id: newId() })),
+    toggleCommunityLike: id => mutate(() => repository.toggleCommunityPostLike(db, id)),
+    addCommunityComment: (id, _author, text) => mutate(() => repository.insertCommunityComment(db, id, text)),
+    addTripPlan: (id, people, extras) => mutate(() => repository.createTripPlan(db, id, people, extras)),
+    updateSetting: (key, next) => mutate(() => catalog.saveSetting(db, key, next)),
+  };
+  return <AppDataContext.Provider value={value}>{children}{error && <View accessibilityRole="alert" style={{ position: 'absolute', bottom: 80, left: 12, right: 12, padding: 14, borderRadius: 12, backgroundColor: '#701C2A', zIndex: 999 }}><Text style={{ color: 'white' }}>{error}</Text><Pressable accessibilityRole="button" onPress={refresh} style={{ paddingVertical: 12 }}><Text style={{ color: 'white' }}>Reintentar lectura</Text></Pressable><Pressable accessibilityRole="button" onPress={() => setError(null)}><Text style={{ color: 'white' }}>Cerrar aviso</Text></Pressable></View>}</AppDataContext.Provider>;
 }
-
 export function useAppData() {
   const context = useContext(AppDataContext);
   if (!context) throw new Error('useAppData debe usarse dentro de AppDataProvider');

@@ -22,7 +22,7 @@ type Props = {
 };
 
 export function DestinationSheet({ destination, location, locating, locationError, route, routing, routeError, offline, onClose, onLocate, onRoute, onSaved }: Props) {
-  const { addBudgetItem } = useAppData();
+  const { addTripPlan } = useAppData();
   const [planning, setPlanning] = useState(false);
   const [people, setPeople] = useState('1');
   const [extras, setExtras] = useState('0');
@@ -40,7 +40,7 @@ export function DestinationSheet({ destination, location, locating, locationErro
     setSaving(true);
     setError('');
     try {
-      await addBudgetItem(`Plan: ${destination.name} · ${visitors} persona(s) · entradas + extras`, total, 'Otro');
+      if (!await addTripPlan(destination.id, visitors, additional)) { setError('No se pudo guardar. Revisá el importe (máximo dos decimales) e intentá de nuevo.'); return; }
       onSaved();
     } catch { setError('No se pudo guardar. Tu plan sigue aquí; intentá de nuevo.'); }
     finally { savingLock.current = false; setSaving(false); }

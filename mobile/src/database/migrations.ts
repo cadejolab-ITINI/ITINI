@@ -1,13 +1,17 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { seedBudgetItems, seedCommunityPosts, seedDestinations, seedProfile } from '@/data/seed';
+import { migrateV3 } from './schema-v3';
 
-const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export async function migrateDatabase(db: SQLiteDatabase) {
-  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
+  await db.withTransactionAsync(async () => {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const currentVersion = row?.user_version ?? 0;
+  if (currentVersion > SCHEMA_VERSION) throw new Error('Esta base requiere una versión más reciente de ITINI. No se modificaron los datos.');
+  if (currentVersion === SCHEMA_VERSION) return;
 
   if (currentVersion < 1) {
     await db.execAsync(`
@@ -96,12 +100,15 @@ export async function migrateDatabase(db: SQLiteDatabase) {
     `);
   }
 
-  await seedDatabase(db);
+  if (currentVersion < 2) await seedDatabase(db, currentVersion === 0);
+  if (currentVersion < 3) await migrateV3(db);
+  const violations = await db.getAllAsync('PRAGMA foreign_key_check');
+  if (violations.length) throw new Error('La base contiene relaciones inválidas. La actualización se revirtió sin borrar datos.');
   await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+  });
 }
 
-async function seedDatabase(db: SQLiteDatabase) {
-  await db.withTransactionAsync(async () => {
+async function seedDatabase(db: SQLiteDatabase, initialInstall: boolean) {
     await db.runAsync(
       `INSERT OR IGNORE INTO profiles
        (id, name, username, avatar, bio, home_region, updated_at)
@@ -117,35 +124,13 @@ async function seedDatabase(db: SQLiteDatabase) {
 
     for (const destination of seedDestinations) {
       await db.runAsync(
-        `INSERT INTO destinations (
+        `INSERT OR IGNORE INTO destinations (
           id, slug, name, summary, description, latitude, longitude, distance_km,
           duration_minutes, elevation_gain_m, difficulty, entrance_fee_cordobas,
           capacity_daily, sustainability_score, community_contribution_pct,
           impact_summary, local_rules_json, waste_guidance_json,
           community_benefits_json, route_coordinates_json, verification_status, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          slug = excluded.slug,
-          name = excluded.name,
-          summary = excluded.summary,
-          description = excluded.description,
-          latitude = excluded.latitude,
-          longitude = excluded.longitude,
-          distance_km = excluded.distance_km,
-          duration_minutes = excluded.duration_minutes,
-          elevation_gain_m = excluded.elevation_gain_m,
-          difficulty = excluded.difficulty,
-          entrance_fee_cordobas = excluded.entrance_fee_cordobas,
-          capacity_daily = excluded.capacity_daily,
-          sustainability_score = excluded.sustainability_score,
-          community_contribution_pct = excluded.community_contribution_pct,
-          impact_summary = excluded.impact_summary,
-          local_rules_json = excluded.local_rules_json,
-          waste_guidance_json = excluded.waste_guidance_json,
-          community_benefits_json = excluded.community_benefits_json,
-          route_coordinates_json = excluded.route_coordinates_json,
-          verification_status = excluded.verification_status,
-          updated_at = excluded.updated_at`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         destination.id,
         destination.slug,
         destination.name,
@@ -172,7 +157,7 @@ async function seedDatabase(db: SQLiteDatabase) {
     }
 
     const budgetCount = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM budget_items');
-    if ((budgetCount?.count ?? 0) === 0) {
+    if (initialInstall && (budgetCount?.count ?? 0) === 0) {
       for (const item of seedBudgetItems) {
         await db.runAsync(
           'INSERT INTO budget_items (id, name, amount, category, created_at) VALUES (?, ?, ?, ?, ?)',
@@ -210,5 +195,4 @@ async function seedDatabase(db: SQLiteDatabase) {
         );
       }
     }
-  });
 }
