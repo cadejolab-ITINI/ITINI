@@ -6,6 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedBrandBackground } from '@/components/AnimatedBrandBackground';
+import { OnboardingTransition } from '@/components/OnboardingTransition';
 import { colors, font, shadow } from '@/constants/theme';
 
 export default function WelcomeScreen() {
@@ -17,6 +18,7 @@ export default function WelcomeScreen() {
   };
 
   return (
+    <OnboardingTransition>
     <View style={styles.screen}>
       <AnimatedBrandBackground />
 
@@ -67,6 +69,7 @@ export default function WelcomeScreen() {
         </ScrollView>
       </SafeAreaView>
     </View>
+    </OnboardingTransition>
   );
 }
 

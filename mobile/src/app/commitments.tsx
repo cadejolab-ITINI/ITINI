@@ -1,10 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, shadow } from '@/constants/theme';
+import { OnboardingTransition } from '@/components/OnboardingTransition';
+import { DemoWelcomeModal } from '@/components/DemoWelcomeModal';
 
 type Commitment = {
   title: string;
@@ -58,6 +61,14 @@ function CommitmentCard({ item }: { item: Commitment }) {
 }
 
 export default function CommitmentsScreen() {
+  const [demoVisible, setDemoVisible] = useState(false);
+  const enteringDemo = useRef(false);
+  const exploreDemo = () => {
+    if (enteringDemo.current) return;
+    enteringDemo.current = true;
+    setDemoVisible(false);
+    router.replace('/(tabs)');
+  };
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const responsiveSpacing = {
@@ -66,6 +77,7 @@ export default function CommitmentsScreen() {
   };
 
   return (
+    <OnboardingTransition>
     <View style={styles.screen}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
@@ -98,7 +110,7 @@ export default function CommitmentsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Comenzar a planear mi viaje"
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => setDemoVisible(true)}
             style={({ pressed }) => [styles.ctaShell, pressed && styles.ctaPressed]}
           >
             <LinearGradient
@@ -114,7 +126,9 @@ export default function CommitmentsScreen() {
           </Pressable>
         </ScrollView>
       </SafeAreaView>
+      <DemoWelcomeModal visible={demoVisible} onClose={() => setDemoVisible(false)} onContinue={exploreDemo} />
     </View>
+    </OnboardingTransition>
   );
 }
 
