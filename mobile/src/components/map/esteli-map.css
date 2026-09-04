@@ -11,7 +11,7 @@
 @keyframes itini-location-pulse { from { transform: scale(.5); opacity: .85; } to { transform: scale(1.5); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .itini-location-pulse { animation: none; } }
 .itini-map-tooltip { color: #f2f8ff; background: #0d172c; border: 1px solid #254264; border-radius: 8px; padding: 6px 9px; font-size: 11px; }
-.itini-leaflet .leaflet-control-zoom { margin: 0 16px 110px 0; border: 1px solid #29425c; z-index: 700; }
+.itini-leaflet .leaflet-control-zoom { margin: 0 16px 50px 0; border: 1px solid #29425c; z-index: 700; }
 .itini-leaflet .leaflet-control-zoom a { background: #0d172c; color: #d5edff; border-color: #29425c; width: 36px; height: 36px; line-height: 36px; }
 .itini-leaflet .leaflet-control-attribution { background: #09142eeb; color: #b5ccdf; font-size: 10px; }
 .itini-leaflet .leaflet-control-attribution a { color: #80ceff; }
