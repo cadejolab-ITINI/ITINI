@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { type Href, router } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,14 +26,12 @@ export default function WelcomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.brandBlock}>
-            <View style={styles.markViewport}>
-              <Image
-                source={require('@/assets/brand/itini-mark.png')}
-                style={styles.mark}
-                resizeMode="contain"
-                accessibilityLabel="Isotipo oficial de ITINI"
-              />
-            </View>
+            <Image
+              source={require('@/assets/brand/itini-mark.png')}
+              style={styles.mark}
+              resizeMode="contain"
+              accessibilityLabel="Isotipo oficial de ITINI"
+            />
 
             <Text style={styles.wordmark}>ITINI</Text>
             <Text style={styles.tagline}>ITINERARIOS DE LA NATURALEZA</Text>
@@ -53,8 +52,16 @@ export default function WelcomeScreen() {
             onPress={() => router.push('/commitments' as Href)}
             style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]}
           >
-            <Text style={styles.nextLabel}>Siguiente</Text>
-            <MaterialCommunityIcons name="chevron-right" size={28} color={colors.white} />
+            <LinearGradient
+              colors={['#10C985', '#13AEE4', '#FF741B']}
+              locations={[0, 0.54, 1]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.nextGradient}
+            >
+              <Text style={styles.nextLabel}>Siguiente</Text>
+              <MaterialCommunityIcons name="chevron-right" size={25} color={colors.white} />
+            </LinearGradient>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -79,16 +86,9 @@ const styles = StyleSheet.create({
   brandBlock: {
     alignItems: 'center',
   },
-  markViewport: {
-    width: 124,
-    height: 124,
-    overflow: 'hidden',
-  },
   mark: {
-    width: 132,
-    height: 132,
-    marginTop: -4,
-    marginLeft: -4,
+    width: 116,
+    height: 116,
   },
   wordmark: {
     marginTop: 18,
@@ -141,27 +141,27 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     width: '100%',
-    minHeight: 64,
     marginTop: 'auto',
-    paddingHorizontal: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.42)',
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 16,
+    overflow: 'hidden',
     ...shadow,
   },
   nextButtonPressed: {
-    opacity: 0.78,
+    opacity: 0.82,
     transform: [{ scale: 0.99 }],
   },
+  nextGradient: {
+    minHeight: 60,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   nextLabel: {
-    marginLeft: 22,
+    marginLeft: 13,
     color: colors.white,
     fontFamily: font.extraBold,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 23,
   },
 });
