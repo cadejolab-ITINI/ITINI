@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 
@@ -40,15 +39,7 @@ export function AnimatedBrandBackground() {
   }, [blueMotion, greenMotion, orangeMotion]);
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <LinearGradient
-        colors={['#086A88', '#08775E', '#19733B', '#C86C20']}
-        locations={[0, 0.34, 0.66, 1]}
-        start={{ x: 0.05, y: 0 }}
-        end={{ x: 0.95, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.background]}>
       <Animated.View
         style={[
           styles.blob,
@@ -61,9 +52,7 @@ export function AnimatedBrandBackground() {
             ],
           },
         ]}
-      >
-        <LinearGradient colors={['rgba(20,117,209,0.74)', 'rgba(20,117,209,0)']} style={styles.blobFill} />
-      </Animated.View>
+      />
 
       <Animated.View
         style={[
@@ -77,9 +66,7 @@ export function AnimatedBrandBackground() {
             ],
           },
         ]}
-      >
-        <LinearGradient colors={['rgba(19,184,109,0.62)', 'rgba(19,184,109,0)']} style={styles.blobFill} />
-      </Animated.View>
+      />
 
       <Animated.View
         style={[
@@ -93,49 +80,40 @@ export function AnimatedBrandBackground() {
             ],
           },
         ]}
-      >
-        <LinearGradient colors={['rgba(245,157,29,0.8)', 'rgba(245,157,29,0)']} style={styles.blobFill} />
-      </Animated.View>
-
-      <View style={styles.readabilityOverlay} />
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    backgroundColor: '#020719',
+    overflow: 'hidden',
+  },
   blob: {
     position: 'absolute',
     overflow: 'hidden',
     borderRadius: 999,
   },
-  blobFill: {
-    flex: 1,
-    borderRadius: 999,
-  },
   blueBlob: {
+    backgroundColor: 'rgba(20,117,209,0.18)',
     width: 470,
     height: 470,
     left: -235,
     top: -185,
   },
   greenBlob: {
+    backgroundColor: 'rgba(19,184,109,0.12)',
     width: 540,
     height: 540,
     right: -285,
     top: 155,
   },
   orangeBlob: {
+    backgroundColor: 'rgba(245,157,29,0.14)',
     width: 520,
     height: 520,
     left: -160,
     bottom: -305,
-  },
-  readabilityOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(3, 22, 31, 0.18)',
   },
 });

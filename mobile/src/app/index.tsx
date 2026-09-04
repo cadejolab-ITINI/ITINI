@@ -25,15 +25,13 @@ export default function WelcomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.brandBlock}>
-            <View style={styles.markCard}>
-              <View style={styles.markViewport}>
-                <Image
-                  source={require('@/assets/brand/itini-mark.png')}
-                  style={styles.mark}
-                  resizeMode="contain"
-                  accessibilityLabel="Isotipo oficial de ITINI"
-                />
-              </View>
+            <View style={styles.markViewport}>
+              <Image
+                source={require('@/assets/brand/itini-mark.png')}
+                style={styles.mark}
+                resizeMode="contain"
+                accessibilityLabel="Isotipo oficial de ITINI"
+              />
             </View>
 
             <Text style={styles.wordmark}>ITINI</Text>
@@ -67,7 +65,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#08775E',
+    backgroundColor: '#020719',
   },
   safeArea: {
     flex: 1,
@@ -81,29 +79,16 @@ const styles = StyleSheet.create({
   brandBlock: {
     alignItems: 'center',
   },
-  markCard: {
+  markViewport: {
     width: 124,
     height: 124,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.96)',
-    shadowColor: colors.orange,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.38,
-    shadowRadius: 18,
-    elevation: 12,
-  },
-  markViewport: {
-    width: 94,
-    height: 94,
     overflow: 'hidden',
   },
   mark: {
-    width: 100,
-    height: 100,
-    marginTop: -3,
-    marginLeft: -3,
+    width: 132,
+    height: 132,
+    marginTop: -4,
+    marginLeft: -4,
   },
   wordmark: {
     marginTop: 18,
