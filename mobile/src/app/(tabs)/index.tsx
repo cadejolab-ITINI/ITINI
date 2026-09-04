@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,6 +11,8 @@ import { RouteSheet } from '@/components/core/RouteSheet';
 import { SosSheet } from '@/components/core/SosSheet';
 import { DestinationSheet } from '@/components/core/DestinationSheet';
 import { FloatingQuickBubble } from '@/components/core/FloatingQuickBubble';
+import { LocationPermissionModal } from '@/components/core/LocationPermissionModal';
+import { needsLocationSettings } from '@/services/location-permission';
 import { distanceKm, fetchRoadRoute, normalizeSearch, type RoadRoute } from '@/services/map-routing';
 import { EsteliMap } from '@/components/map/EsteliMap';
 import { colors, font, shadow } from '@/constants/theme';
@@ -17,7 +20,7 @@ import { useUserLocation } from '@/hooks/use-user-location';
 import { useAppData } from '@/providers/AppDataProvider';
 import type { Destination } from '@/types/domain';
 
-type ActiveSheet = 'routes' | 'prices' | 'guides' | 'sos' | 'destination' | null;
+type ActiveSheet = 'routes' | 'prices' | 'guides' | 'sos' | 'destination' | 'gps' | null;
 
 const quickMenus = [
   { id: 'routes' as const, label: 'Rutas', icon: 'map-outline' as const, color: '#16C88D' },
@@ -28,7 +31,7 @@ const quickMenus = [
 
 export default function MapScreen() {
   const { destinations, profile } = useAppData();
-  const { location, loading: locating, error: locationError, start } = useUserLocation(true);
+  const { location, permission, canAskAgain, servicesEnabled, loading: locating, error: locationError, start, stop } = useUserLocation(false);
   const [selected, setSelected] = useState<Destination | null>(null);
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -41,10 +44,25 @@ export default function MapScreen() {
   const [routeError, setRouteError] = useState<string | null>(null);
   const [recenterToken, setRecenterToken] = useState(0);
   const [calculatorFirst, setCalculatorFirst] = useState(false);
+  const [initialGpsBlocked, setInitialGpsBlocked] = useState(false);
+  const gpsReturnSheet = useRef<ActiveSheet>(null);
+  const gpsAttempt = useRef(0);
   const searchInput = useRef<TextInput>(null);
   const centeredOnce = useRef(false);
   const routeRequest = useRef<AbortController | null>(null);
   const { destinationId } = useLocalSearchParams<{ destinationId?: string }>();
+
+  useEffect(() => {
+    let disposed = false;
+    // Inspect silently; the system prompt is only requested by the user's button.
+    void Location.getForegroundPermissionsAsync().then((result) => {
+      if (disposed) return;
+      setInitialGpsBlocked(needsLocationSettings(result, Platform.OS));
+      if (result.granted) void start();
+      else setSheet((current) => current ?? 'gps');
+    }).catch(() => { if (!disposed) setSheet((current) => current ?? 'gps'); });
+    return () => { disposed = true; gpsAttempt.current += 1; };
+  }, [start]);
 
   useEffect(() => () => routeRequest.current?.abort(), []);
   useEffect(() => {
@@ -82,10 +100,25 @@ export default function MapScreen() {
     setSheet('destination');
   };
 
-  const locate = async () => {
+  const locate = () => {
     dismissSearch();
+    gpsReturnSheet.current = sheet === 'destination' ? 'destination' : null;
+    setSheet('gps');
+  };
+
+  const activateGps = async () => {
+    const attempt = ++gpsAttempt.current;
     const point = await start();
-    if (point) setRecenterToken((value) => value + 1);
+    if (point && attempt === gpsAttempt.current) {
+      setRecenterToken((value) => value + 1);
+      setSheet(gpsReturnSheet.current);
+    }
+  };
+
+  const closeGps = () => {
+    gpsAttempt.current += 1;
+    if (locating) stop();
+    setSheet(gpsReturnSheet.current);
   };
 
   const calculateRoute = async () => {
@@ -192,7 +225,7 @@ export default function MapScreen() {
         <Pressable disabled={locating} onPress={locate} style={styles.gpsButton} accessibilityRole="button" accessibilityLabel="Actualizar ubicación GPS">
           <MaterialCommunityIcons name={locating ? 'progress-clock' : 'crosshairs-gps'} size={26} color="#FFFFFF" />
         </Pressable>
-        {locationError && <View style={styles.locationError}><Text style={styles.locationErrorText}>{locationError}</Text></View>}
+        {(locationError || (!location && !locating)) && sheet !== 'gps' && <Pressable accessibilityRole="button" accessibilityLabel="Activar permiso GPS" onPress={locate} style={styles.locationError}><Text style={styles.locationErrorText}>{locationError || 'Activá tu ubicación para verte en el mapa.'} Tocá aquí.</Text></Pressable>}
         {route && selected && <View style={styles.routeSummary}>
           <Pressable accessibilityRole="button" accessibilityLabel="Ver detalle de la ruta" onPress={() => setSheet('destination')} style={{ flex: 1 }}>
             <Text style={styles.routeTitle}>{selected.name}</Text>
@@ -204,6 +237,7 @@ export default function MapScreen() {
       </SafeAreaView>
 
       <RouteSheet visible={sheet === 'routes'} onClose={() => setSheet(null)} onSelect={selectDestination} />
+      {sheet === 'gps' && <LocationPermissionModal visible loading={locating} error={locationError} blocked={permission ? needsLocationSettings({ status: permission, canAskAgain }, Platform.OS) : initialGpsBlocked} servicesDisabled={servicesEnabled === false} onActivate={activateGps} onClose={closeGps} />}
       <PriceSheet visible={sheet === 'prices'} initialTab={calculatorFirst ? 'Calculadora' : 'Verificados'} onClose={() => setSheet(null)} />
       {sheet === 'destination' && selected && <DestinationSheet key={selected.id} destination={selected} location={location} locating={locating} locationError={locationError} offline={offline} route={route} routing={routing} routeError={routeError} onRoute={calculateRoute} onLocate={locate} onClose={() => { routeRequest.current?.abort(); routeRequest.current = null; setRouting(false); setSheet(null); }} onSaved={() => { setCalculatorFirst(true); setSheet('prices'); }} />}
       <GuideSheet visible={sheet === 'guides'} onClose={() => setSheet(null)} />

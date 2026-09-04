@@ -8,6 +8,26 @@
 - Planificación: cantidad de personas y gastos adicionales manuales. Se guarda un estimado en SQLite y se abre la calculadora. No reserva ni cobra. Los gastos pueden eliminarse con ×.
 - Buscador: coincidencias por palabras, sin distinguir mayúsculas ni tildes. Tocar o desplazar el mapa cierra sugerencias y teclado. Seleccionar un resultado abre su ficha; Escape cierra la búsqueda en web.
 
+## Permisos y precisión geográfica
+
+### Permiso GPS en la pantalla 3
+
+Al entrar, ITINI consulta el estado del permiso sin mostrar el diálogo del sistema automáticamente. Si falta autorización, presenta «Activá tu ubicación». El botón solicita el permiso real con Expo Location; si ya estaba concedido, obtiene la ubicación directamente. No solicita notificaciones push ni ubicación en segundo plano.
+
+Una denegación permanente ofrece «Abrir ajustes» en Android/iOS; en web explica cómo habilitar Ubicación en los permisos del sitio. La vista integrada puede bloquear la geolocalización y no ofrecer ese control: en ese caso hay que usar un navegador compatible. Ningún botón concede permisos por sí solo. «Reintentar GPS» comprueba el estado nuevamente y solicita una lectura actual (sin caché en web). También se detectan servicios de ubicación apagados y errores de adquisición.
+
+«Ahora no» permite seguir explorando. El botón GPS y el aviso inferior vuelven a abrir el diálogo. Al obtener coordenadas, se cierra el aviso, se centra el punto azul y, si se venía de una ficha de destino, se vuelve a ella. Cancelar invalida cualquier respuesta pendiente para que no cambie la pantalla después.
+
+Pruebas específicas: `pnpm run test:location`. Se verificaron en la vista web la aparición inicial, la denegación real, el cierre y la reapertura; la concesión del permiso y apertura de ajustes nativos requieren prueba en teléfono.
+
+### Corrección de las ubicaciones turísticas: pendiente
+
+Los cinco destinos todavía usan coordenadas demo de `mobile/src/data/seed.ts`. Esta actualización de permisos **no los reubica**. La base SQLite carga esas coordenadas al iniciar; por eso no basta con mover un marcador visualmente.
+
+Para corregirlos, recopilar por destino: enlace al punto exacto en Google Maps u OpenStreetMap (o lectura GPS en campo), qué representa el punto (entrada, estacionamiento, cima o atractivo), fuente y fecha de comprobación. Confirmar la entrada accesible con el responsable/guía local antes de usarla como destino de una ruta en vehículo. Luego actualizar el catálogo fuente y los datos persistidos, manteniendo el historial de verificación y sin tocar perfiles o presupuestos.
+
+No resolver solo por nombre: por ejemplo, el [plan de manejo de Cerro Tomabú de MARENA](https://www.marena.gob.ni/wp-content/uploads/2022/04/Plan-Manejo-Reserva-Natural-Cerro-Tomabu.pdf) menciona una «cueva del duende», mientras hay un [Mirador Cueva del Duende cartografiado cerca de La Garnacha](https://mapcarta.com/N4998172725). No se ha confirmado con el equipo cuál es el acceso que ITINI debe recomendar.
+
 ## Rutas: alcance y privacidad
 
 El usuario solicita expresamente «Ver ruta desde mi ubicación», después de ver el aviso de envío de coordenadas a OSRM. Se consulta su servicio público de demostración con origen GPS y destino seleccionado. Devuelve geometría real de la red de carreteras, distancia y tiempo **en vehículo**. No se usa la antigua línea fija ni los trazos de ejemplo de `routeCoordinates`.

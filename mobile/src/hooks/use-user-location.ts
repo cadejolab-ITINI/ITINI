@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 import type { UserLocation } from '@/types/domain';
 import { validCoordinate } from '@/services/map-routing';
@@ -7,6 +8,8 @@ import { validCoordinate } from '@/services/map-routing';
 export function useUserLocation(autoStart = false) {
   const [location, setLocation] = useState<UserLocation | null>(null);
   const [permission, setPermission] = useState<Location.PermissionStatus | null>(null);
+  const [canAskAgain, setCanAskAgain] = useState(true);
+  const [servicesEnabled, setServicesEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const subscription = useRef<Location.LocationSubscription | null>(null);
@@ -16,6 +19,7 @@ export function useUserLocation(autoStart = false) {
   const stop = useCallback(() => {
     generation.current += 1;
     pending.current = null;
+    setLoading(false);
     subscription.current?.remove();
     subscription.current = null;
   }, []);
@@ -31,17 +35,36 @@ export function useUserLocation(autoStart = false) {
       subscription.current = null;
       let timeout: ReturnType<typeof setTimeout> | undefined;
       try {
-        const result = await Location.requestForegroundPermissionsAsync();
+        const permissionRequest = Location.requestForegroundPermissionsAsync();
+        const result = Platform.OS === 'web' ? await Promise.race([
+          permissionRequest,
+          new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error('Permission timeout')), 30000); }),
+        ]) : await permissionRequest;
+        clearTimeout(timeout);
         if (!active()) return null;
         setPermission(result.status);
+        setCanAskAgain(result.canAskAgain);
         if (result.status !== Location.PermissionStatus.GRANTED) {
           setLocation(null);
           setError('Activá el permiso de ubicación para usar GPS y preparar el SOS Demo.');
           return null;
         }
 
+        const enabled = await Location.hasServicesEnabledAsync();
+        if (!active()) return null;
+        setServicesEnabled(enabled);
+        if (!enabled) {
+          setError('El permiso está concedido, pero la ubicación del dispositivo está apagada. Activala en los ajustes del sistema y reintentá.');
+          return null;
+        }
+
+        // Expo forwards web options to the browser; require a fresh GPS reading.
+        const options: Location.LocationOptions & { maximumAge?: number; timeout?: number } = {
+          accuracy: Location.Accuracy.High,
+          ...(Platform.OS === 'web' ? { maximumAge: 0, timeout: 20000 } : {}),
+        };
         const current = await Promise.race([
-          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+          Location.getCurrentPositionAsync(options),
           new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error('GPS timeout')), 20000); }),
         ]);
         clearTimeout(timeout);
@@ -86,5 +109,5 @@ export function useUserLocation(autoStart = false) {
     return stop;
   }, [autoStart, start, stop]);
 
-  return { location, permission, loading, error, start, stop };
+  return { location, permission, canAskAgain, servicesEnabled, loading, error, start, stop };
 }
