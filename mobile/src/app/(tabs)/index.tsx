@@ -9,6 +9,7 @@ import { PriceSheet } from '@/components/core/PriceSheet';
 import { RouteSheet } from '@/components/core/RouteSheet';
 import { SosSheet } from '@/components/core/SosSheet';
 import { DestinationSheet } from '@/components/core/DestinationSheet';
+import { FloatingQuickBubble } from '@/components/core/FloatingQuickBubble';
 import { distanceKm, fetchRoadRoute, normalizeSearch, type RoadRoute } from '@/services/map-routing';
 import { EsteliMap } from '@/components/map/EsteliMap';
 import { colors, font, shadow } from '@/constants/theme';
@@ -178,9 +179,11 @@ export default function MapScreen() {
 
         <View style={styles.quickMenu}>
           <View style={styles.quickBadge}><Text style={styles.quickBadgeText}>MENÚ RÁPIDO</Text></View>
-          {quickMenus.map((item) => (
+          {quickMenus.map((item, index) => (
             <Pressable key={item.id} onPress={() => { dismissSearch(); setCalculatorFirst(false); setSheet(item.id); }} style={styles.quickItem} accessibilityRole="button" accessibilityLabel={`Abrir ${item.label}`}>
-              <View style={[styles.quickBubble, { backgroundColor: item.color }]}><MaterialCommunityIcons name={item.icon} size={24} color="#FFFFFF" /></View>
+              <FloatingQuickBubble id={item.id} index={index} active={sheet === null && !searchOpen && !statusOpen}>
+                <View style={[styles.quickBubble, { backgroundColor: item.color }]}><MaterialCommunityIcons name={item.icon} size={24} color="#FFFFFF" /></View>
+              </FloatingQuickBubble>
               <Text style={[styles.quickLabel, item.id === 'sos' && styles.sosLabel]}>{item.label}</Text>
             </Pressable>
           ))}
