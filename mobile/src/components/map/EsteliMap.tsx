@@ -1,8 +1,9 @@
-import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
+import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { colors } from '@/constants/theme';
+import { googleDarkMapStyle } from './google-dark-style';
 import type { EsteliMapProps } from './map-types';
 import { UserLocationDot } from './UserLocationDot';
 
@@ -12,15 +13,6 @@ const ESTELI_REGION = {
   latitudeDelta: 0.14,
   longitudeDelta: 0.12,
 };
-
-const darkMapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#102238' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#A9BDCC' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#07111F' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#24435D' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0B3A5E' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0C3D2B' }] },
-];
 
 export function EsteliMap({ destinations, selected, userLocation, onDestinationPress, onMapPress, recenterToken, route, offline }: EsteliMapProps) {
   const map = useRef<MapView>(null);
@@ -38,8 +30,9 @@ export function EsteliMap({ destinations, selected, userLocation, onDestinationP
     <MapView
       ref={map}
       style={styles.map}
+      provider={PROVIDER_GOOGLE}
       initialRegion={ESTELI_REGION}
-      customMapStyle={darkMapStyle}
+      customMapStyle={googleDarkMapStyle}
       mapType={offline ? 'none' : 'standard'}
       onPress={onMapPress}
       onPanDrag={onMapPress}
