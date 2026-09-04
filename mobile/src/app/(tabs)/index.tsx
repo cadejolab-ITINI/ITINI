@@ -278,7 +278,8 @@ const styles = StyleSheet.create({
   suggestionDifficulty: { borderRadius: 999, backgroundColor: '#172238', paddingHorizontal: 8, paddingVertical: 4 },
   suggestionDifficultyText: { color: '#8190A7', fontFamily: font.bold, fontSize: 8 },
   noResults: { padding: 12, color: '#8493A8', fontFamily: font.regular, fontSize: 10 },
-  quickMenu: { position: 'absolute', top: 196, right: 16, alignItems: 'center', gap: 8, zIndex: 10 },
+  // Reservamos una columna para que las burbujas nunca cubran los controles de zoom del mapa.
+  quickMenu: { position: 'absolute', top: 196, right: 70, alignItems: 'center', gap: 8, zIndex: 10 },
   quickBadge: { borderRadius: 999, borderWidth: 1, borderColor: '#0A5B84', backgroundColor: '#071127', paddingHorizontal: 9, paddingVertical: 4 },
   quickBadgeText: { color: '#11A5E2', fontFamily: font.extraBold, fontSize: 8 },
   quickItem: { alignItems: 'center', gap: 3 },
