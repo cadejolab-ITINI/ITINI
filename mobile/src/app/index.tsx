@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { type Href, router } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedBrandBackground } from '@/components/AnimatedBrandBackground';
@@ -27,9 +28,9 @@ export default function WelcomeScreen() {
         >
           <View style={styles.brandBlock}>
             <Image
-              source={require('@/assets/brand/itini-mark.png')}
+              source={require('@/assets/brand/itini-mark-clean.svg')}
               style={styles.mark}
-              resizeMode="contain"
+              contentFit="contain"
               accessibilityLabel="Isotipo oficial de ITINI"
             />
 
