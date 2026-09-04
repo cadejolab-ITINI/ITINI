@@ -4,12 +4,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ItiniBottomSheet } from '@/components/core/ItiniBottomSheet';
 import { font } from '@/constants/theme';
 import { useAppData } from '@/providers/AppDataProvider';
-import type { Difficulty } from '@/types/domain';
+import type { Destination, Difficulty } from '@/types/domain';
 
 type Filter = 'Todos' | Difficulty;
 const filters: Filter[] = ['Todos', 'Fácil', 'Medio', 'Avanzado'];
 
-export function RouteSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+export function RouteSheet({ visible, onClose, onSelect }: { visible: boolean; onClose: () => void; onSelect: (destination: Destination) => void }) {
   const { destinations } = useAppData();
   const [filter, setFilter] = useState<Filter>('Todos');
   const results = useMemo(
@@ -18,7 +18,7 @@ export function RouteSheet({ visible, onClose }: { visible: boolean; onClose: ()
   );
 
   return (
-    <ItiniBottomSheet visible={visible} onClose={onClose} title="Explorar Rutas" badge="ITINI VERIFIED" icon="map-outline" accent="#10C58A">
+    <ItiniBottomSheet visible={visible} onClose={onClose} title="Explorar Rutas" badge="DESTINOS · DEMO" icon="map-outline" accent="#10C58A">
       <View style={styles.filterPanel}>
         <Text style={styles.label}>FILTRAR POR DIFICULTAD:</Text>
         <View style={styles.filters}>
@@ -32,13 +32,13 @@ export function RouteSheet({ visible, onClose }: { visible: boolean; onClose: ()
 
       <View style={styles.list}>
         {results.map((destination) => (
-          <View style={styles.routeCard} key={destination.id}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Ver ${destination.name}`} onPress={() => onSelect(destination)} style={styles.routeCard} key={destination.id}>
             <View style={styles.routeCopy}>
               <Text style={styles.routeTitle}>{destination.name}</Text>
               <Text style={styles.routeMeta}>{destination.distanceKm.toFixed(1)} km • {(destination.durationMinutes / 60).toFixed(1)} hrs</Text>
             </View>
             <View style={styles.difficulty}><Text style={styles.difficultyText}>{destination.difficulty}</Text></View>
-          </View>
+          </Pressable>
         ))}
       </View>
     </ItiniBottomSheet>

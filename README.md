@@ -15,6 +15,10 @@ ITINI es un MVP movil de ecoturismo sostenible pensado para Android y iOS. La ap
 
 ## Enfoque del proyecto
 
+### Actualización del mapa y la planificación
+
+La pantalla 3 incorpora mapa web interactivo, punto GPS animado, fichas al tocar destinos, búsqueda con cierre al tocar fuera y planes guardados en el presupuesto. Las rutas por carretera se calculan bajo petición; no son senderos validados. Los precios y coordenadas de destinos siguen siendo datos demo. [Alcance, privacidad y pruebas](docs/MAPA-DASHBOARD.md).
+
 ITINI nace como una propuesta de turismo seguro, accesible y responsable para Nicaragua. En esta primera version el foco esta en una demo funcional para Hackathon 2026, priorizando experiencia movil, identidad visual y una base tecnica lista para crecer.
 
 ## Tecnologias

@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ItiniBottomSheet } from '@/components/core/ItiniBottomSheet';
@@ -10,9 +10,10 @@ import type { BudgetCategory } from '@/types/domain';
 
 type Tab = 'Verificados' | 'Calculadora' | 'Recomendación';
 
-export function PriceSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean; onClose: () => void; initialTab?: Tab }) {
   const { budgetItems, addBudgetItem, removeBudgetItem } = useAppData();
   const [tab, setTab] = useState<Tab>('Verificados');
+  useEffect(() => { if (visible && initialTab) setTab(initialTab); }, [visible, initialTab]);
   const [itemName, setItemName] = useState('');
   const [amount, setAmount] = useState('');
   const [budget, setBudget] = useState('');
@@ -43,7 +44,7 @@ export function PriceSheet({ visible, onClose }: { visible: boolean; onClose: ()
     <ItiniBottomSheet visible={visible} onClose={onClose} title="Calculadora" badge="PRESUPUESTO EXACTO" icon="calculator-variant-outline" accent="#FF6D1B">
       <View style={styles.tabs}>
         {(['Verificados', 'Calculadora', 'Recomendación'] as Tab[]).map((item) => (
-          <Pressable key={item} onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}>
+          <Pressable key={item} accessibilityRole="button" onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}>
             <Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text>
           </Pressable>
         ))}
@@ -69,10 +70,11 @@ export function PriceSheet({ visible, onClose }: { visible: boolean; onClose: ()
       {tab === 'Calculadora' && (
         <View style={styles.section}>
           {budgetItems.map((item) => (
-            <Pressable key={item.id} onLongPress={() => removeBudgetItem(item.id)} style={styles.calculatorRow} accessibilityLabel={`Mantén presionado para eliminar ${item.name}`}>
-              <Text style={styles.priceName}>{item.name}</Text>
+            <View key={item.id} style={styles.calculatorRow}>
+              <Text style={[styles.priceName, { flex: 1 }]}>{item.name}</Text>
               <Text style={styles.amount}>C$ {item.amount.toLocaleString('es-NI')}</Text>
-            </Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Eliminar ${item.name}`} onPress={() => removeBudgetItem(item.id)} style={styles.removeButton}><MaterialCommunityIcons name="close" size={18} color="#8B99AA" /></Pressable>
+            </View>
           ))}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total Estimado:</Text>
@@ -85,7 +87,7 @@ export function PriceSheet({ visible, onClose }: { visible: boolean; onClose: ()
               <MaterialCommunityIcons name="plus" size={25} color="#FFFFFF" />
             </Pressable>
           </View>
-          <Text style={styles.hint}>Mantené presionado un gasto para eliminarlo.</Text>
+          <Text style={styles.hint}>Tocá × para quitar un gasto de tu presupuesto.</Text>
         </View>
       )}
 
@@ -117,7 +119,8 @@ const styles = StyleSheet.create({
   verified: { color: '#159EE6', marginTop: 2, fontFamily: font.bold, fontSize: 9 },
   addVerified: { minHeight: 25, paddingHorizontal: 9, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF6D1B' },
   addVerifiedText: { color: '#FFFFFF', fontFamily: font.extraBold, fontSize: 10 },
-  calculatorRow: { minHeight: 35, borderRadius: 11, borderWidth: 1, borderColor: '#D6E0EB', backgroundColor: '#F7F9FB', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  calculatorRow: { minHeight: 44, borderRadius: 11, borderWidth: 1, borderColor: '#D6E0EB', backgroundColor: '#F7F9FB', paddingLeft: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  removeButton: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   amount: { color: '#FF6412', fontFamily: font.extraBold, fontSize: 13 },
   totalRow: { borderTopWidth: 1, borderTopColor: '#D6E0EB', marginTop: 4, paddingTop: 10, flexDirection: 'row', justifyContent: 'space-between' },
   totalLabel: { color: '#34445A', fontFamily: font.extraBold, fontSize: 13 },

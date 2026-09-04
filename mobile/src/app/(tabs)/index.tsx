@@ -1,19 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GuideSheet } from '@/components/core/GuideSheet';
 import { PriceSheet } from '@/components/core/PriceSheet';
 import { RouteSheet } from '@/components/core/RouteSheet';
 import { SosSheet } from '@/components/core/SosSheet';
+import { DestinationSheet } from '@/components/core/DestinationSheet';
+import { distanceKm, fetchRoadRoute, normalizeSearch, type RoadRoute } from '@/services/map-routing';
 import { EsteliMap } from '@/components/map/EsteliMap';
 import { colors, font, shadow } from '@/constants/theme';
 import { useUserLocation } from '@/hooks/use-user-location';
 import { useAppData } from '@/providers/AppDataProvider';
 import type { Destination } from '@/types/domain';
 
-type ActiveSheet = 'routes' | 'prices' | 'guides' | 'sos' | null;
+type ActiveSheet = 'routes' | 'prices' | 'guides' | 'sos' | 'destination' | null;
 
 const quickMenus = [
   { id: 'routes' as const, label: 'Rutas', icon: 'map-outline' as const, color: '#16C88D' },
@@ -32,16 +35,80 @@ export default function MapScreen() {
   const [offline, setOffline] = useState(false);
   const [sheet, setSheet] = useState<ActiveSheet>(null);
   const [toast, setToast] = useState(false);
+  const [route, setRoute] = useState<RoadRoute | null>(null);
+  const [routing, setRouting] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [recenterToken, setRecenterToken] = useState(0);
+  const [calculatorFirst, setCalculatorFirst] = useState(false);
+  const searchInput = useRef<TextInput>(null);
+  const centeredOnce = useRef(false);
+  const routeRequest = useRef<AbortController | null>(null);
+  const { destinationId } = useLocalSearchParams<{ destinationId?: string }>();
+
+  useEffect(() => () => routeRequest.current?.abort(), []);
+  useEffect(() => {
+    if (location && !centeredOnce.current) { centeredOnce.current = true; setRecenterToken((value) => value + 1); }
+  }, [location]);
+  useEffect(() => {
+    if (offline) { routeRequest.current?.abort(); routeRequest.current = null; setRouting(false); }
+  }, [offline]);
+  useEffect(() => {
+    const destination = destinations.find((item) => item.id === destinationId);
+    if (destination) { selectDestination(destination); router.setParams({ destinationId: undefined }); }
+  }, [destinationId, destinations]);
+
+  const dismissSearch = () => {
+    setSearchOpen(false);
+    setStatusOpen(false);
+    searchInput.current?.blur();
+    Keyboard.dismiss();
+  };
 
   const recommendations = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase('es');
-    return destinations.filter((item) => !query || item.name.toLocaleLowerCase('es').includes(query)).slice(0, 5);
+    const words = normalizeSearch(search).split(/\s+/).filter(Boolean);
+    return destinations.filter((item) => words.every((word) => normalizeSearch(`${item.name} ${item.description} ${item.difficulty}`).includes(word))).slice(0, 5);
   }, [destinations, search]);
 
   const selectDestination = (destination: Destination) => {
+    routeRequest.current?.abort();
+    routeRequest.current = null;
+    setRouting(false);
+    setRouteError(null);
+    if (selected?.id !== destination.id) setRoute(null);
     setSelected(destination);
     setSearch(destination.name);
-    setSearchOpen(false);
+    dismissSearch();
+    setSheet('destination');
+  };
+
+  const locate = async () => {
+    dismissSearch();
+    const point = await start();
+    if (point) setRecenterToken((value) => value + 1);
+  };
+
+  const calculateRoute = async () => {
+    if (!selected || !location || offline || routing) return;
+    if (Date.now() - location.timestamp > 120000) { setRouteError('Tu ubicación es antigua. Actualizá el GPS antes de calcular.'); return; }
+    routeRequest.current?.abort();
+    const request = new AbortController();
+    routeRequest.current = request;
+    setRouting(true);
+    setRoute(null);
+    setRouteError(null);
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; request.abort(); }, 15000);
+    try {
+      const result = await fetchRoadRoute(location, selected, request.signal);
+      if (routeRequest.current !== request || request.signal.aborted) return;
+      setRoute(result);
+      setSheet(null);
+    } catch (error) {
+      if (routeRequest.current === request && (!request.signal.aborted || timedOut)) setRouteError(timedOut ? 'La ruta tardó demasiado. Revisá tu conexión e intentá de nuevo.' : error instanceof Error ? error.message : 'No se pudo calcular la ruta.');
+    } finally {
+      clearTimeout(timeout);
+      if (routeRequest.current === request) { routeRequest.current = null; setRouting(false); }
+    }
   };
 
   const showSosToast = () => {
@@ -51,7 +118,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.screen}>
-      <EsteliMap destinations={destinations} selected={selected} userLocation={location} onDestinationPress={selectDestination} />
+      <EsteliMap destinations={destinations} selected={selected} userLocation={location} onDestinationPress={selectDestination} onMapPress={dismissSearch} route={route} recenterToken={recenterToken} offline={offline} />
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay} edges={['top']}>
         {toast && <View style={styles.toast}><Text style={styles.toastText}>🚨 ¡Señal SOS emitida en Modo Demo!</Text></View>}
@@ -81,6 +148,10 @@ export default function MapScreen() {
             <MaterialCommunityIcons name="magnify" size={20} color="#19B9EF" />
             <TextInput
               value={search}
+              ref={searchInput}
+              returnKeyType="search"
+              onSubmitEditing={() => { if (recommendations.length) selectDestination(recommendations[0]); else dismissSearch(); }}
+              onKeyPress={(event) => { if (event.nativeEvent.key === 'Escape') dismissSearch(); }}
               onChangeText={(value) => { setSearch(value); setSearchOpen(true); }}
               onFocus={() => setSearchOpen(true)}
               placeholder="Buscar destino en Estelí…"
@@ -88,13 +159,13 @@ export default function MapScreen() {
               style={styles.searchInput}
               accessibilityLabel="Buscar destino en Estelí"
             />
-            {search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Limpiar búsqueda" onPress={() => { setSearch(''); setSelected(null); setSearchOpen(false); }}><MaterialCommunityIcons name="close-circle" size={19} color="#65748D" /></Pressable>}
+            {search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Limpiar búsqueda" onPress={() => { setSearch(''); setSearchOpen(true); searchInput.current?.focus(); }}><MaterialCommunityIcons name="close-circle" size={19} color="#65748D" /></Pressable>}
           </View>
 
           {searchOpen && (
             <View style={styles.suggestions}>
               {recommendations.map((destination, index) => (
-                <Pressable key={destination.id} onPress={() => selectDestination(destination)} style={styles.suggestion}>
+                <Pressable key={destination.id} accessibilityRole="button" accessibilityLabel={`Seleccionar ${destination.name}`} onPress={() => selectDestination(destination)} style={styles.suggestion}>
                   <View style={[styles.suggestionDot, { backgroundColor: index % 3 === 0 ? colors.orange : index % 3 === 1 ? colors.emerald : '#17ADE4' }]} />
                   <Text style={styles.suggestionName}>{destination.name}</Text>
                   <View style={styles.suggestionDifficulty}><Text style={styles.suggestionDifficultyText}>{destination.difficulty}</Text></View>
@@ -108,21 +179,30 @@ export default function MapScreen() {
         <View style={styles.quickMenu}>
           <View style={styles.quickBadge}><Text style={styles.quickBadgeText}>MENÚ RÁPIDO</Text></View>
           {quickMenus.map((item) => (
-            <Pressable key={item.id} onPress={() => setSheet(item.id)} style={styles.quickItem} accessibilityRole="button" accessibilityLabel={`Abrir ${item.label}`}>
+            <Pressable key={item.id} onPress={() => { dismissSearch(); setCalculatorFirst(false); setSheet(item.id); }} style={styles.quickItem} accessibilityRole="button" accessibilityLabel={`Abrir ${item.label}`}>
               <View style={[styles.quickBubble, { backgroundColor: item.color }]}><MaterialCommunityIcons name={item.icon} size={24} color="#FFFFFF" /></View>
               <Text style={[styles.quickLabel, item.id === 'sos' && styles.sosLabel]}>{item.label}</Text>
             </Pressable>
           ))}
         </View>
 
-        <Pressable onPress={() => start()} style={styles.gpsButton} accessibilityRole="button" accessibilityLabel="Actualizar ubicación GPS">
+        <Pressable disabled={locating} onPress={locate} style={styles.gpsButton} accessibilityRole="button" accessibilityLabel="Actualizar ubicación GPS">
           <MaterialCommunityIcons name={locating ? 'progress-clock' : 'crosshairs-gps'} size={26} color="#FFFFFF" />
         </Pressable>
         {locationError && <View style={styles.locationError}><Text style={styles.locationErrorText}>{locationError}</Text></View>}
+        {route && selected && <View style={styles.routeSummary}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Ver detalle de la ruta" onPress={() => setSheet('destination')} style={{ flex: 1 }}>
+            <Text style={styles.routeTitle}>{selected.name}</Text>
+            <Text style={styles.routeText}>{(route.distanceMeters / 1000).toFixed(1)} km · {Math.ceil(route.durationSeconds / 60)} min en vehículo</Text>
+            <Text style={styles.routeHint}>{location && distanceKm(location, route.origin) > 0.1 ? 'Te moviste. Tocá para actualizar la ruta.' : 'Naranja punteado: acceso por confirmar · datos demo'}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Quitar ruta" onPress={() => setRoute(null)} style={{ padding: 10 }}><MaterialCommunityIcons name="close" size={20} color="#BED5EA" /></Pressable>
+        </View>}
       </SafeAreaView>
 
-      <RouteSheet visible={sheet === 'routes'} onClose={() => setSheet(null)} />
-      <PriceSheet visible={sheet === 'prices'} onClose={() => setSheet(null)} />
+      <RouteSheet visible={sheet === 'routes'} onClose={() => setSheet(null)} onSelect={selectDestination} />
+      <PriceSheet visible={sheet === 'prices'} initialTab={calculatorFirst ? 'Calculadora' : 'Verificados'} onClose={() => setSheet(null)} />
+      {sheet === 'destination' && selected && <DestinationSheet key={selected.id} destination={selected} location={location} locating={locating} locationError={locationError} offline={offline} route={route} routing={routing} routeError={routeError} onRoute={calculateRoute} onLocate={locate} onClose={() => { routeRequest.current?.abort(); routeRequest.current = null; setRouting(false); setSheet(null); }} onSaved={() => { setCalculatorFirst(true); setSheet('prices'); }} />}
       <GuideSheet visible={sheet === 'guides'} onClose={() => setSheet(null)} />
       <SosSheet visible={sheet === 'sos'} onClose={() => setSheet(null)} onSent={showSosToast} />
     </View>
@@ -131,7 +211,7 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#020719' },
-  overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 1 },
   userPanel: { position: 'absolute', top: 16, left: 22, right: 22, minHeight: 105, borderRadius: 18, borderWidth: 1, borderColor: '#1C2B45', backgroundColor: 'rgba(3, 9, 25, 0.94)', padding: 12, zIndex: 20 },
   userRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#078CB5', backgroundColor: '#0C162B', alignItems: 'center', justifyContent: 'center' },
@@ -167,7 +247,11 @@ const styles = StyleSheet.create({
   quickBubble: { width: 43, height: 43, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)', alignItems: 'center', justifyContent: 'center', ...shadow },
   quickLabel: { color: '#E5EBF4', fontFamily: font.extraBold, fontSize: 8 },
   sosLabel: { color: '#F0444D' },
-  gpsButton: { position: 'absolute', left: 82, top: 382, width: 56, height: 56, borderRadius: 28, borderWidth: 10, borderColor: 'rgba(13,157,220,0.5)', backgroundColor: '#0AA9E8', alignItems: 'center', justifyContent: 'center', ...shadow },
+  gpsButton: { position: 'absolute', left: 20, bottom: 110, width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: '#2F5978', backgroundColor: '#0C2038', alignItems: 'center', justifyContent: 'center', ...shadow },
+  routeSummary: { position: 'absolute', left: 18, right: 18, bottom: 26, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#24455F', backgroundColor: '#07142DF5', flexDirection: 'row', alignItems: 'center', gap: 4 },
+  routeTitle: { fontFamily: font.extraBold, fontSize: 12, color: '#F4FAFF' },
+  routeText: { fontFamily: font.semibold, fontSize: 11, color: '#73D3FF', marginTop: 3 },
+  routeHint: { fontFamily: font.regular, fontSize: 9, color: '#EEBA79', marginTop: 4 },
   locationError: { position: 'absolute', left: 18, right: 80, bottom: 12, borderRadius: 9, padding: 8, backgroundColor: 'rgba(7,16,36,0.94)' },
   locationErrorText: { color: '#F59D1D', fontFamily: font.semibold, fontSize: 9 },
   toast: { position: 'absolute', top: 14, right: 8, width: 186, minHeight: 48, borderRadius: 999, backgroundColor: '#12C68A', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, zIndex: 60, ...shadow },

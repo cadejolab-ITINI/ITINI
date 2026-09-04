@@ -30,7 +30,7 @@ export default function DestinationsScreen() {
             <View style={styles.titleRow}><Text style={styles.destinationTitle}>{destination.name}</Text><View style={styles.badge}><Text style={styles.badgeText}>{destination.difficulty}</Text></View></View>
             <Text style={styles.meta}>{destination.distanceKm.toFixed(1)} km • {(destination.durationMinutes / 60).toFixed(1)} hrs</Text>
             <Text style={styles.description}>{destination.description}</Text>
-            <Pressable onPress={() => router.push('/(tabs)' as Href)} style={styles.mapButton}><MaterialCommunityIcons name="map-marker-outline" size={17} color="#17BDF1" /><Text style={styles.mapButtonText}>Ver en el Mapa</Text></Pressable>
+            <Pressable onPress={() => router.push({ pathname: '/(tabs)', params: { destinationId: destination.id } } as Href)} style={styles.mapButton}><MaterialCommunityIcons name="map-marker-outline" size={17} color="#17BDF1" /><Text style={styles.mapButtonText}>Ver en el Mapa</Text></Pressable>
           </View>
         ))}
       </ScrollView>

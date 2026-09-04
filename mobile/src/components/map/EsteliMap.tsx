@@ -1,15 +1,10 @@
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
+import { useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { colors } from '@/constants/theme';
-import type { Destination, UserLocation } from '@/types/domain';
-
-type Props = {
-  destinations: Destination[];
-  selected: Destination | null;
-  userLocation: UserLocation | null;
-  onDestinationPress: (destination: Destination) => void;
-};
+import type { EsteliMapProps } from './map-types';
+import { UserLocationDot } from './UserLocationDot';
 
 const ESTELI_REGION = {
   latitude: 13.045,
@@ -27,16 +22,33 @@ const darkMapStyle = [
   { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0C3D2B' }] },
 ];
 
-export function EsteliMap({ destinations, selected, userLocation, onDestinationPress }: Props) {
+export function EsteliMap({ destinations, selected, userLocation, onDestinationPress, onMapPress, recenterToken, route, offline }: EsteliMapProps) {
+  const map = useRef<MapView>(null);
+  const latestLocation = useRef(userLocation);
+  latestLocation.current = userLocation;
+  useEffect(() => {
+    const point = latestLocation.current;
+    if (point && recenterToken > 0) map.current?.animateToRegion({ ...point, latitudeDelta: 0.012, longitudeDelta: 0.012 }, 450);
+  }, [recenterToken]);
+  useEffect(() => {
+    if (route) map.current?.fitToCoordinates([route.origin, ...route.coordinates, route.destination], { edgePadding: { top: 160, right: 90, bottom: 150, left: 40 }, animated: true });
+    else if (selected) map.current?.animateToRegion({ ...selected, latitudeDelta: 0.025, longitudeDelta: 0.025 }, 450);
+  }, [route, selected]);
   return (
     <MapView
+      ref={map}
       style={styles.map}
       initialRegion={ESTELI_REGION}
       customMapStyle={darkMapStyle}
-      showsUserLocation={Boolean(userLocation)}
-      showsMyLocationButton={Boolean(userLocation)}
+      mapType={offline ? 'none' : 'standard'}
+      onPress={onMapPress}
+      onPanDrag={onMapPress}
+      showsUserLocation={false}
+      showsMyLocationButton={false}
       accessibilityLabel="Mapa interactivo de destinos de Estelí"
     >
+      {userLocation && userLocation.accuracy != null && userLocation.accuracy > 0 && <Circle center={userLocation} radius={userLocation.accuracy} fillColor="rgba(66,133,244,0.09)" strokeColor="rgba(66,133,244,0.25)" strokeWidth={1} />}
+      {userLocation && <Marker coordinate={userLocation} anchor={{ x: 0.5, y: 0.5 }} zIndex={1000} tracksViewChanges tappable={false}><UserLocationDot /></Marker>}
       {destinations.map((destination) => (
         <Marker
           key={destination.id}
@@ -44,12 +56,12 @@ export function EsteliMap({ destinations, selected, userLocation, onDestinationP
           title={destination.name}
           description={`${destination.difficulty} · Sostenibilidad ${destination.sustainabilityScore}/100`}
           pinColor={destination.id === selected?.id ? colors.orange : colors.emerald}
-          onPress={() => onDestinationPress(destination)}
+          onPress={(event) => { event.stopPropagation(); onDestinationPress(destination); }}
         />
       ))}
-      {selected && (
-        <Polyline coordinates={selected.routeCoordinates} strokeColor={colors.sky} strokeWidth={5} lineDashPattern={[12, 7]} />
-      )}
+      {route && <Polyline coordinates={route.coordinates} strokeColor={colors.sky} strokeWidth={5} />}
+      {route && <Polyline coordinates={[route.origin, route.coordinates[0]]} strokeColor={colors.orange} strokeWidth={3} lineDashPattern={[4, 7]} />}
+      {route && <Polyline coordinates={[route.coordinates[route.coordinates.length - 1], route.destination]} strokeColor={colors.orange} strokeWidth={3} lineDashPattern={[4, 7]} />}
     </MapView>
   );
 }

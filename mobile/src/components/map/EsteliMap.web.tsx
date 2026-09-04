@@ -1,63 +1,108 @@
-import { Pressable, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import { useEffect, useRef, useState } from 'react';
+import type * as Leaflet from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import './esteli-map.css';
+import type { EsteliMapProps } from './map-types';
 
-import { colors } from '@/constants/theme';
-import type { Destination, UserLocation } from '@/types/domain';
+export function EsteliMap(props: EsteliMapProps) {
+  const container = useRef<HTMLDivElement>(null);
+  const map = useRef<Leaflet.Map | null>(null);
+  const library = useRef<typeof Leaflet | null>(null);
+  const latest = useRef(props);
+  latest.current = props;
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState('');
+  const [tileError, setTileError] = useState(false);
 
-type Props = {
-  destinations: Destination[];
-  selected: Destination | null;
-  userLocation: UserLocation | null;
-  onDestinationPress: (destination: Destination) => void;
-};
+  useEffect(() => {
+    let cancelled = false;
+    let resize: ResizeObserver | undefined;
+    import('leaflet').then((L) => {
+      if (cancelled || !container.current) return;
+      library.current = L;
+      const instance = L.map(container.current, { zoomControl: false, attributionControl: true }).setView([13.045, -86.365], 12);
+      map.current = instance;
+      instance.attributionControl.setPrefix(false);
+      L.control.zoom({ position: 'bottomright' }).addTo(instance);
+      instance.on('click dragstart', () => latest.current.onMapPress());
+      resize = new ResizeObserver(() => instance.invalidateSize());
+      resize.observe(container.current);
+      setReady(true);
+    }).catch(() => { if (!cancelled) setError('No se pudo cargar el mapa. Recargá la aplicación para reintentar.'); });
+    return () => { cancelled = true; resize?.disconnect(); map.current?.remove(); map.current = null; };
+  }, []);
 
-const positions: Record<string, { top: `${number}%`; left: `${number}%`; color: string }> = {
-  estanzuela: { top: '34%', left: '23%', color: '#17AEE7' },
-  tisey: { top: '44%', left: '35%', color: '#FF711F' },
-  jalacate: { top: '51%', left: '77%', color: '#17AEE7' },
-  garnacha: { top: '63%', left: '47%', color: '#12C98D' },
-  duende: { top: '73%', left: '65%', color: '#FF711F' },
-};
+  useEffect(() => {
+    if (!ready || !map.current || !library.current || props.offline) return;
+    setTileError(false);
+    const layer = library.current.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+      maxZoom: 19, className: 'itini-map-tiles', keepBuffer: 1,
+    }).addTo(map.current);
+    layer.on('tileerror', () => setTileError(true));
+    layer.on('load', () => {
+      const tiles = container.current?.querySelectorAll<HTMLImageElement>('.leaflet-tile');
+      if (tiles?.length && Array.from(tiles).every((tile) => tile.naturalWidth > 0)) setTileError(false);
+    });
+    return () => { layer.remove(); };
+  }, [ready, props.offline]);
 
-export function EsteliMap({ destinations, selected, userLocation, onDestinationPress }: Props) {
-  return (
-    <View style={styles.map} accessibilityLabel="Vista web del mapa de Estelí">
-      <Svg width="100%" height="100%" viewBox="0 0 390 700" preserveAspectRatio="none" style={styles.lines}>
-        <Path d="M-20 110 C90 70 142 170 235 150 C306 136 340 80 410 42" fill="none" stroke="#18253B" strokeWidth="1.4" />
-        <Path d="M-10 160 C88 126 140 170 205 218 C278 272 335 230 405 165" fill="none" stroke="#1B2940" strokeWidth="1.5" />
-        <Path d="M-15 303 C78 270 133 300 222 354 C300 401 350 367 410 310" fill="none" stroke="#1B2940" strokeWidth="1.2" />
-        <Path d="M-20 453 C85 412 162 466 238 505 C311 542 355 523 407 486" fill="none" stroke="#1B2940" strokeWidth="1.4" />
-        <Path d="M-20 590 C92 548 172 591 260 629 C322 656 367 651 410 625" fill="none" stroke="#152239" strokeWidth="1.2" />
-        {[64, 92, 120, 148].map((y) => <Line key={`h-${y}`} x1="54" y1={y + 260} x2="175" y2={y + 260} stroke="#14243A" strokeWidth="1" />)}
-        {[82, 110, 138].map((x) => <Line key={`v-${x}`} x1={x} y1="325" x2={x} y2="465" stroke="#14243A" strokeWidth="1" />)}
-        {selected && <Path d="M106 318 L76 356 L99 405 L119 443" fill="none" stroke="#0DAAE3" strokeWidth="5" strokeDasharray="7 6" opacity="0.7" />}
-        {userLocation && <Circle cx="110" cy="410" r="30" fill="#0DAAE3" opacity="0.18" />}
-        {userLocation && <Circle cx="110" cy="410" r="18" fill="#0DAAE3" opacity="0.42" />}
-        {userLocation && <Circle cx="110" cy="410" r="6" fill="#0DAAE3" stroke="#FFFFFF" strokeWidth="2" />}
-      </Svg>
+  useEffect(() => {
+    const L = library.current;
+    if (!ready || !map.current || !L) return;
+    const layer = L.layerGroup().addTo(map.current);
+    props.destinations.forEach((destination, index) => {
+      const color = ['#FF711F', '#12C98D', '#17AEE7'][index % 3];
+      const label = document.createElement('span');
+      label.textContent = destination.name;
+      const marker = L.marker([destination.latitude, destination.longitude], {
+        icon: L.divIcon({ className: 'itini-destination-marker', html: `<span style="background:${color}" class="itini-pin ${props.selected?.id === destination.id ? 'is-selected' : ''}"></span>`, iconSize: [32, 32], iconAnchor: [16, 16] }),
+        title: destination.name, alt: `Ver ${destination.name}`, keyboard: true, bubblingMouseEvents: false,
+      }).addTo(layer).bindTooltip(label, { direction: 'top', offset: [0, -12], className: 'itini-map-tooltip' });
+      marker.on('click', () => latest.current.onDestinationPress(destination));
+      marker.getElement()?.setAttribute('role', 'button');
+      marker.getElement()?.setAttribute('aria-label', `Ver ${destination.name}`);
+    });
+    return () => { layer.remove(); };
+  }, [ready, props.destinations, props.selected?.id]);
 
-      {destinations.map((destination) => {
-        const position = positions[destination.id] ?? { top: '50%' as const, left: '50%' as const, color: colors.emerald };
-        return (
-          <Pressable
-            key={destination.id}
-            onPress={() => onDestinationPress(destination)}
-            style={[styles.marker, { top: position.top, left: position.left, borderColor: position.color }, selected?.id === destination.id && styles.markerSelected]}
-            accessibilityRole="button"
-            accessibilityLabel={`Seleccionar ${destination.name}`}
-          >
-            <View style={[styles.markerCore, { backgroundColor: position.color }]} />
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+  useEffect(() => {
+    const L = library.current;
+    const point = props.userLocation;
+    if (!ready || !map.current || !L || !point) return;
+    const layer = L.layerGroup().addTo(map.current);
+    if (point.accuracy != null && point.accuracy > 0) L.circle([point.latitude, point.longitude], {
+      radius: point.accuracy, color: '#4285F4', weight: 1, opacity: 0.22, fillOpacity: 0.09, interactive: false,
+    }).addTo(layer);
+    L.marker([point.latitude, point.longitude], {
+      icon: L.divIcon({ className: 'itini-location-marker', html: '<span class="itini-location-pulse"></span><span class="itini-location-dot"></span>', iconSize: [40, 40], iconAnchor: [20, 20] }),
+      title: 'Tu ubicación GPS', alt: 'Tu ubicación GPS', interactive: false, zIndexOffset: 1000,
+    }).addTo(layer);
+    return () => { layer.remove(); };
+  }, [ready, props.userLocation]);
+
+  useEffect(() => {
+    const L = library.current;
+    const route = props.route;
+    if (!ready || !map.current || !L || !route) return;
+    const layer = L.layerGroup().addTo(map.current);
+    const line = L.polyline(route.coordinates.map((point) => [point.latitude, point.longitude] as [number, number]), { color: '#38BDF8', weight: 5 }).addTo(layer);
+    const first = route.coordinates[0];
+    const last = route.coordinates[route.coordinates.length - 1];
+    [[route.origin, first], [last, route.destination]].forEach((pair) => L.polyline(pair.map((p) => [p.latitude, p.longitude] as [number, number]), { color: '#F5A64A', weight: 3, dashArray: '4 7' }).bindTooltip('Acceso por confirmar; no es un sendero validado').addTo(layer));
+    map.current.fitBounds(line.getBounds().extend([route.origin.latitude, route.origin.longitude]).extend([route.destination.latitude, route.destination.longitude]), { paddingTopLeft: [42, 150], paddingBottomRight: [88, 150], maxZoom: 15 });
+    return () => { layer.remove(); };
+  }, [ready, props.route]);
+
+  useEffect(() => {
+    if (ready && props.selected && !props.route) map.current?.panTo([props.selected.latitude, props.selected.longitude], { animate: true });
+  }, [ready, props.selected, props.route]);
+
+  useEffect(() => {
+    const point = latest.current.userLocation;
+    if (ready && point && props.recenterToken > 0) map.current?.setView([point.latitude, point.longitude], 15, { animate: true });
+  }, [ready, props.recenterToken]);
+
+  const message = error || (props.offline ? 'Modo desconectado · fichas disponibles. El mapa base necesita internet.' : tileError ? 'Sin conexión al mapa base. Podés consultar los destinos.' : !ready ? 'Cargando mapa de Estelí…' : '');
+  return <div className="itini-real-map" onPointerDown={props.onMapPress}><div ref={container} className="itini-leaflet" aria-label="Mapa interactivo de Estelí" />{message && <div className="itini-map-message" role="status">{message}</div>}</div>;
 }
-
-const styles = StyleSheet.create({
-  map: { flex: 1, minHeight: 500, backgroundColor: '#020719', overflow: 'hidden' },
-  lines: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
-  marker: { position: 'absolute', width: 18, height: 18, marginLeft: -9, marginTop: -9, borderRadius: 9, borderWidth: 3, backgroundColor: '#F8FBFF', alignItems: 'center', justifyContent: 'center' },
-  markerCore: { width: 7, height: 7, borderRadius: 4 },
-  markerSelected: { transform: [{ scale: 1.2 }] },
-});
