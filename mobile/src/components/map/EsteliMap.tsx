@@ -1,5 +1,6 @@
 import { Camera, GeoJSONSource, Layer, Map, Marker } from '@maplibre/maplibre-react-native';
 import type { StyleSpecification } from '@maplibre/maplibre-react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -103,7 +104,7 @@ export function EsteliMap({ destinations, selected, userLocation, onDestinationP
         </Marker>
       )}
 
-      {destinations.map((destination, index) => (
+      {destinations.map((destination) => (
         <Marker
           key={destination.id}
           id={`destination-${destination.id}`}
@@ -111,7 +112,9 @@ export function EsteliMap({ destinations, selected, userLocation, onDestinationP
           anchor="center"
           onPress={(event) => { event.stopPropagation?.(); onDestinationPress(destination); }}
         >
-          <View accessible accessibilityRole="button" accessibilityLabel={`Ver ${destination.name}`} style={[styles.destinationMarker, { backgroundColor: [colors.orange, colors.emerald, colors.sky][index % 3] }, destination.id === selected?.id && styles.destinationMarkerSelected]} />
+          <View accessible accessibilityRole="button" accessibilityLabel={`Ver ${destination.name}`} style={destination.id === selected?.id ? styles.destinationMarkerSelected : styles.destinationMarker}>
+            <MaterialCommunityIcons name="map-marker" size={31} color="#168DE2" />
+          </View>
         </Marker>
       ))}
     </Map>
@@ -120,6 +123,6 @@ export function EsteliMap({ destinations, selected, userLocation, onDestinationP
 
 const styles = StyleSheet.create({
   map: { flex: 1 },
-  destinationMarker: { width: 18, height: 18, borderRadius: 9, borderWidth: 3, borderColor: colors.white },
-  destinationMarkerSelected: { width: 24, height: 24, borderRadius: 12, borderWidth: 4 },
+  destinationMarker: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  destinationMarkerSelected: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', transform: [{ scale: 1.12 }] },
 });

@@ -52,11 +52,10 @@ export function EsteliMap(props: EsteliMapProps) {
     if (!ready || !map.current || !L) return;
     const layer = L.layerGroup().addTo(map.current);
     props.destinations.forEach((destination, index) => {
-      const color = ['#FF711F', '#12C98D', '#17AEE7'][index % 3];
       const label = document.createElement('span');
       label.textContent = destination.name;
       const marker = L.marker([destination.latitude, destination.longitude], {
-        icon: L.divIcon({ className: 'itini-destination-marker', html: `<span style="background:${color}" class="itini-pin ${props.selected?.id === destination.id ? 'is-selected' : ''}"></span>`, iconSize: [32, 32], iconAnchor: [16, 16] }),
+        icon: L.divIcon({ className: 'itini-destination-marker', html: `<span class="itini-pin ${props.selected?.id === destination.id ? 'is-selected' : ''}"><span class="itini-pin-dot"></span></span>`, iconSize: [34, 34], iconAnchor: [17, 30] }),
         title: destination.name, alt: `Ver ${destination.name}`, keyboard: true, bubblingMouseEvents: false,
       }).addTo(layer).bindTooltip(label, { direction: 'top', offset: [0, -12], className: 'itini-map-tooltip' });
       marker.on('click', () => latest.current.onDestinationPress(destination));
