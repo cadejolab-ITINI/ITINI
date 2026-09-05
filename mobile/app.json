@@ -46,7 +46,8 @@
         {
           "backgroundColor": "#07111F",
           "image": "./assets/brand/splash.png",
-          "imageWidth": 280
+          "imageWidth": 220,
+          "resizeMode": "contain"
         }
       ],
       "expo-sqlite",
