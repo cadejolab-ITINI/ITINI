@@ -46,6 +46,7 @@ export default function MapScreen() {
   const [recenterToken, setRecenterToken] = useState(0);
   const [calculatorFirst, setCalculatorFirst] = useState(false);
   const [initialGpsBlocked, setInitialGpsBlocked] = useState(false);
+  const [gpsServicesBlocked, setGpsServicesBlocked] = useState(false);
   const gpsReturnSheet = useRef<ActiveSheet>(null);
   const gpsAttempt = useRef(0);
   const searchInput = useRef<TextInput>(null);
@@ -101,13 +102,36 @@ export default function MapScreen() {
     setSheet('destination');
   };
 
-  const locate = () => {
+  const locate = async () => {
     dismissSearch();
     gpsReturnSheet.current = sheet === 'destination' ? 'destination' : null;
+
+    // Revisa el estado actual antes de mostrar la ventana. En Android el
+    // permiso puede seguir concedido aunque el botón se pulse varias veces.
+    // En ese caso solo refrescamos la posición y centramos el mapa.
+    try {
+      const currentPermission = await Location.getForegroundPermissionsAsync();
+      if (currentPermission.granted) {
+        setInitialGpsBlocked(false);
+        const enabled = await Location.hasServicesEnabledAsync();
+        setGpsServicesBlocked(!enabled);
+        if (enabled) {
+          await activateGps();
+          return;
+        }
+      } else {
+        setInitialGpsBlocked(needsLocationSettings(currentPermission, Platform.OS));
+        setGpsServicesBlocked(false);
+      }
+    } catch {
+      // Si no se puede consultar el estado, dejamos que la ventana explique
+      // el problema y permita reintentar de forma segura.
+    }
     setSheet('gps');
   };
 
   const activateGps = async () => {
+    setGpsServicesBlocked(false);
     const attempt = ++gpsAttempt.current;
     const point = await start();
     if (point && attempt === gpsAttempt.current) {
@@ -238,7 +262,7 @@ export default function MapScreen() {
       </SafeAreaView>
 
       <RouteSheet visible={sheet === 'routes'} onClose={() => setSheet(null)} onSelect={selectDestination} />
-      {sheet === 'gps' && <LocationPermissionModal visible loading={locating} error={locationError} blocked={permission ? needsLocationSettings({ status: permission, canAskAgain }, Platform.OS) : initialGpsBlocked} servicesDisabled={servicesEnabled === false} onActivate={activateGps} onClose={closeGps} />}
+      {sheet === 'gps' && <LocationPermissionModal visible loading={locating} error={locationError} blocked={permission ? needsLocationSettings({ status: permission, canAskAgain }, Platform.OS) : initialGpsBlocked} servicesDisabled={servicesEnabled === false || gpsServicesBlocked} onActivate={activateGps} onClose={closeGps} />}
       <PriceSheet visible={sheet === 'prices'} initialTab={calculatorFirst ? 'Calculadora' : 'Verificados'} onClose={() => setSheet(null)} />
       {sheet === 'destination' && selected && <DestinationSheet key={selected.id} destination={selected} location={location} locating={locating} locationError={locationError} offline={offline} route={route} routing={routing} routeError={routeError} onRoute={calculateRoute} onLocate={locate} onClose={() => { routeRequest.current?.abort(); routeRequest.current = null; setRouting(false); setSheet(null); }} onSaved={() => { setCalculatorFirst(true); setSheet('prices'); }} />}
       <GuideSheet visible={sheet === 'guides'} onClose={() => setSheet(null)} />
