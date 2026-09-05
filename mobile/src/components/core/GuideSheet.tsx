@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ItiniBottomSheet } from '@/components/core/ItiniBottomSheet';
 import type { Guide } from '@/database/catalog';
@@ -12,6 +12,15 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
   const { guides } = useAppData();
   const [selected, setSelected] = useState<Guide | null>(null);
   const [error, setError] = useState('');
+  const contentTransition = useRef(new Animated.Value(1)).current;
+
+  const switchGuide = (guide: Guide | null) => {
+    Animated.timing(contentTransition, { toValue: 0, duration: 130, useNativeDriver: true }).start(({ finished }) => {
+      if (!finished) return;
+      setSelected(guide);
+      Animated.timing(contentTransition, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+    });
+  };
 
   const contact = async (guide: Guide, channel: 'sms' | 'tel') => {
     if (!guide.phone || guide.verificationStatus === 'demo') return;
@@ -22,10 +31,11 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
 
   return (
     <ItiniBottomSheet visible={visible} onClose={onClose} title="Guías Locales" badge="DIRECTORIO · VERIFICACIÓN PENDIENTE" icon="account-group-outline" accent="#08A8F7">
+      <Animated.View style={{ opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
       {!selected ? (
         <View style={styles.list}>
           {guides.map((guide) => (
-            <Pressable key={guide.id} onPress={() => setSelected(guide)} style={styles.guideCard}>
+            <Pressable key={guide.id} onPress={() => switchGuide(guide)} style={styles.guideCard}>
               <View style={styles.guideCopy}>
                 <View style={styles.nameRow}><Text style={styles.name}>{guide.name}</Text><Text style={styles.verified}>{guide.verificationStatus === 'demo' ? 'Perfil demo' : 'Verificado'}</Text></View>
                 <Text style={styles.base}>{guide.base}</Text>
@@ -36,7 +46,7 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
         </View>
       ) : (
         <View style={styles.detail}>
-          <Pressable onPress={() => setSelected(null)} style={styles.back}><MaterialCommunityIcons name="chevron-left" size={18} color="#078CD0" /><Text style={styles.backText}>Volver a lista de guías</Text></Pressable>
+          <Pressable onPress={() => switchGuide(null)} style={styles.back}><MaterialCommunityIcons name="chevron-left" size={18} color="#078CD0" /><Text style={styles.backText}>Volver a lista de guías</Text></Pressable>
           <View style={styles.profileCard}>
             <Text style={styles.name}>{selected.name}</Text>
             <Text style={styles.base}>{selected.base} • {selected.credential}</Text>
@@ -52,6 +62,7 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
           </View>
         </View>
       )}
+      </Animated.View>
     </ItiniBottomSheet>
   );
 }

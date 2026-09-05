@@ -18,10 +18,16 @@ export function SosSheet({ visible, onClose, onSent }: { visible: boolean; onClo
   const [canceling, setCanceling] = useState(false);
   const [reason, setReason] = useState('');
   const progress = useRef(new Animated.Value(0)).current;
+  const contentTransition = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (visible && !location && !loading) start().catch(() => undefined);
   }, [visible]);
+
+  useEffect(() => {
+    contentTransition.setValue(0);
+    Animated.timing(contentTransition, { toValue: 1, duration: 240, useNativeDriver: true }).start();
+  }, [event, canceling]);
 
   const beginHold = () => {
     if (!location || event) return;
@@ -60,6 +66,7 @@ export function SosSheet({ visible, onClose, onSent }: { visible: boolean; onClo
 
       {error && <Text style={styles.error}>{error}</Text>}
 
+      <Animated.View style={{ opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
       {!event ? (
         <View style={styles.holdArea}>
           <Pressable
@@ -100,6 +107,7 @@ export function SosSheet({ visible, onClose, onSent }: { visible: boolean; onClo
           <Pressable onPress={() => setCanceling(true)}><Text style={styles.cancelLink}>Cancelar / Resolver Alerta</Text></Pressable>
         </View>
       )}
+      </Animated.View>
     </ItiniBottomSheet>
   );
 }

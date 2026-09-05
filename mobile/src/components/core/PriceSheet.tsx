@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ItiniBottomSheet } from '@/components/core/ItiniBottomSheet';
 import { font } from '@/constants/theme';
@@ -12,12 +12,22 @@ type Tab = 'Verificados' | 'Calculadora' | 'Recomendación';
 export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean; onClose: () => void; initialTab?: Tab }) {
   const { budgetItems, prices, addBudgetItem, removeBudgetItem, error } = useAppData();
   const [tab, setTab] = useState<Tab>('Verificados');
+  const contentTransition = useRef(new Animated.Value(1)).current;
   useEffect(() => { if (visible && initialTab) setTab(initialTab); }, [visible, initialTab]);
   const [itemName, setItemName] = useState('');
   const [amount, setAmount] = useState('');
   const [budget, setBudget] = useState('');
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const total = useMemo(() => budgetItems.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) / 100, [budgetItems]);
+
+  const changeTab = (next: Tab) => {
+    if (next === tab) return;
+    Animated.timing(contentTransition, { toValue: 0, duration: 130, useNativeDriver: true }).start(({ finished }) => {
+      if (!finished) return;
+      setTab(next);
+      Animated.timing(contentTransition, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+    });
+  };
 
   const addManualCost = async () => {
     const value = Number(amount.replace(',', '.'));
@@ -38,14 +48,14 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
     <ItiniBottomSheet visible={visible} onClose={onClose} title="Calculadora" badge="PRESUPUESTO EXACTO" icon="calculator-variant-outline" accent="#FF6D1B">
       <View style={styles.tabs}>
         {(['Verificados', 'Calculadora', 'Recomendación'] as Tab[]).map((item) => (
-          <Pressable key={item} accessibilityRole="button" onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}>
+          <Pressable key={item} accessibilityRole="button" accessibilityState={{ selected: tab === item }} onPress={() => changeTab(item)} style={[styles.tab, tab === item && styles.tabActive]}>
             <Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text>
           </Pressable>
         ))}
       </View>
 
       {tab === 'Verificados' && (
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
           <Text style={styles.helper}>Catálogo guardado. Los precios demo no están verificados:</Text>
           {prices.map((item) => (
             <View style={styles.priceCard} key={item.id}>
@@ -58,11 +68,11 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
               </Pressable>
             </View>
           ))}
-        </View>
+        </Animated.View>
       )}
 
       {tab === 'Calculadora' && (
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
           {budgetItems.map((item) => (
             <View key={item.id} style={styles.calculatorRow}>
               <Text style={[styles.priceName, { flex: 1 }]}>{item.name}</Text>
@@ -82,18 +92,18 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
             </Pressable>
           </View>
           <Text style={styles.hint}>Tocá × para quitar un gasto de tu presupuesto.</Text>
-        </View>
+        </Animated.View>
       )}
 
       {tab === 'Recomendación' && (
-        <View style={styles.section}>
+        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
           <Text style={styles.helper}>Ingresá tu presupuesto total disponible:</Text>
           <View style={styles.recommendRow}>
             <TextInput value={budget} onChangeText={setBudget} placeholder="Ej. 1000 C$" placeholderTextColor="#9AA8BA" keyboardType="decimal-pad" style={[styles.input, styles.budgetInput]} />
             <Pressable onPress={buildRecommendation} style={styles.recommendButton}><Text style={styles.recommendText}>Recomendar</Text></Pressable>
           </View>
           {recommendation && <View style={styles.recommendation}><Text style={styles.recommendationTitle}>Plan ITINI sugerido</Text><Text style={styles.recommendationText}>{recommendation}</Text></View>}
-        </View>
+        </Animated.View>
       )}
       {error && <Text accessibilityRole="alert" style={[styles.helper, { color: '#B22B39', marginTop: 12 }]}>{error}</Text>}
     </ItiniBottomSheet>
@@ -107,6 +117,7 @@ const styles = StyleSheet.create({
   tabText: { color: '#71829A', fontFamily: font.bold, fontSize: 10, textAlign: 'center' },
   tabTextActive: { color: '#FF6412' },
   section: { marginTop: 13, gap: 8 },
+  animatedContent: { width: '100%' },
   helper: { color: '#6A7B92', fontFamily: font.regular, fontSize: 12 },
   priceCard: { minHeight: 52, borderRadius: 12, borderWidth: 1, borderColor: '#D6E0EB', backgroundColor: '#F7F9FB', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   priceCopy: { flex: 1 },

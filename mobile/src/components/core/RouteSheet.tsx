@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ItiniBottomSheet } from '@/components/core/ItiniBottomSheet';
 import { font } from '@/constants/theme';
@@ -12,10 +12,20 @@ const filters: Filter[] = ['Todos', 'Fácil', 'Medio', 'Avanzado'];
 export function RouteSheet({ visible, onClose, onSelect }: { visible: boolean; onClose: () => void; onSelect: (destination: Destination) => void }) {
   const { destinations } = useAppData();
   const [filter, setFilter] = useState<Filter>('Todos');
+  const listTransition = useRef(new Animated.Value(1)).current;
   const results = useMemo(
     () => destinations.filter((destination) => filter === 'Todos' || destination.difficulty === filter),
     [destinations, filter],
   );
+
+  const changeFilter = (next: Filter) => {
+    if (next === filter) return;
+    Animated.timing(listTransition, { toValue: 0, duration: 130, useNativeDriver: true }).start(({ finished }) => {
+      if (!finished) return;
+      setFilter(next);
+      Animated.timing(listTransition, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+    });
+  };
 
   return (
     <ItiniBottomSheet visible={visible} onClose={onClose} title="Explorar Rutas" badge="DESTINOS · DEMO" icon="map-outline" accent="#10C58A">
@@ -23,14 +33,14 @@ export function RouteSheet({ visible, onClose, onSelect }: { visible: boolean; o
         <Text style={styles.label}>FILTRAR POR DIFICULTAD:</Text>
         <View style={styles.filters}>
           {filters.map((item) => (
-            <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, item === filter && styles.filterActive]}>
+            <Pressable key={item} onPress={() => changeFilter(item)} accessibilityRole="button" accessibilityState={{ selected: item === filter }} style={[styles.filter, item === filter && styles.filterActive]}>
               <Text style={[styles.filterText, item === filter && styles.filterTextActive]}>{item}</Text>
             </Pressable>
           ))}
         </View>
       </View>
 
-      <View style={styles.list}>
+      <Animated.View style={[styles.list, { opacity: listTransition, transform: [{ translateY: listTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
         {results.map((destination) => (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ver ${destination.name}`} onPress={() => onSelect(destination)} style={styles.routeCard} key={destination.id}>
             <View style={styles.routeCopy}>
@@ -40,7 +50,7 @@ export function RouteSheet({ visible, onClose, onSelect }: { visible: boolean; o
             <View style={styles.difficulty}><Text style={styles.difficultyText}>{destination.difficulty}</Text></View>
           </Pressable>
         ))}
-      </View>
+      </Animated.View>
     </ItiniBottomSheet>
   );
 }
