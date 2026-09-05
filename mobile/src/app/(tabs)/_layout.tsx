@@ -10,7 +10,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.emerald,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: '#03091A', borderTopColor: '#1B2A42', height: 64, paddingBottom: 7, paddingTop: 7 },
+        tabBarStyle: { position: 'absolute', left: 12, right: 12, bottom: 10, height: 64, borderRadius: 22, borderWidth: 1, borderTopWidth: 1, borderColor: '#1B2A42', backgroundColor: 'rgba(3, 9, 26, 0.97)', paddingBottom: 7, paddingTop: 7, elevation: 12, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } },
         tabBarLabelStyle: { fontFamily: font.bold, fontSize: 9 },
       }}
     >

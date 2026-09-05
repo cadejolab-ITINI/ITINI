@@ -250,7 +250,7 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#020719' },
   overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 1 },
-  userPanel: { position: 'absolute', top: 16, left: 22, right: 22, minHeight: 105, borderRadius: 18, borderWidth: 1, borderColor: '#1C2B45', backgroundColor: 'rgba(3, 9, 25, 0.94)', padding: 12, zIndex: 20 },
+  userPanel: { position: 'absolute', top: 29, left: 22, right: 22, minHeight: 105, borderRadius: 18, borderWidth: 1, borderColor: '#1C2B45', backgroundColor: 'rgba(3, 9, 25, 0.94)', padding: 12, zIndex: 20 },
   userRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#078CB5', backgroundColor: '#0C162B', alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 18 },
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   quickLabel: { color: '#E5EBF4', fontFamily: font.extraBold, fontSize: 8 },
   sosLabel: { color: '#F0444D' },
   gpsButton: { position: 'absolute', left: 20, bottom: 110, width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: '#2F5978', backgroundColor: '#0C2038', alignItems: 'center', justifyContent: 'center', ...shadow },
-  routeSummary: { position: 'absolute', left: 18, right: 18, bottom: 26, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#24455F', backgroundColor: '#07142DF5', flexDirection: 'row', alignItems: 'center', gap: 4 },
+  routeSummary: { position: 'absolute', left: 18, right: 18, bottom: 92, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#24455F', backgroundColor: '#07142DF5', flexDirection: 'row', alignItems: 'center', gap: 4 },
   routeTitle: { fontFamily: font.extraBold, fontSize: 12, color: '#F4FAFF' },
   routeText: { fontFamily: font.semibold, fontSize: 11, color: '#73D3FF', marginTop: 3 },
   routeHint: { fontFamily: font.regular, fontSize: 9, color: '#EEBA79', marginTop: 4 },

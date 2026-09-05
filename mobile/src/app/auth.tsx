@@ -18,6 +18,7 @@ export default function AuthScreen() {
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [avatar, setAvatar] = useState<string>(avatarOptions[0]);
   const [busy, setBusy] = useState(false);
 
@@ -56,7 +57,7 @@ export default function AuthScreen() {
             <Field label="Apellido" value={lastName} onChangeText={setLastName} placeholder="Tu apellido" autoCapitalize="words" />
           </View>}
           <Field label="Usuario" value={username} onChangeText={setUsername} placeholder="ej. ana_nicaragua" autoCapitalize="none" autoCorrect={false} />
-          <Field label="Contraseña" value={password} onChangeText={setPassword} placeholder="Mínimo 8 caracteres" secureTextEntry autoCapitalize="none" />
+          <Field label="Contraseña" value={password} onChangeText={setPassword} placeholder="Mínimo 8 caracteres" secureTextEntry={!showPassword} onToggleVisibility={() => setShowPassword((visible) => !visible)} autoCapitalize="none" />
 
           {mode === 'register' && <View style={styles.avatarSection}>
             <Text style={styles.label}>Elegí tu avatar</Text>
@@ -74,9 +75,17 @@ export default function AuthScreen() {
   );
 }
 
-function Field(props: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; secureTextEntry?: boolean; autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'; autoCorrect?: boolean }) {
-  const { label, ...inputProps } = props;
-  return <View style={styles.field}><Text style={styles.label}>{label}</Text><TextInput {...inputProps} style={styles.input} placeholderTextColor="#6E7F98" /></View>;
+function Field(props: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; secureTextEntry?: boolean; onToggleVisibility?: () => void; autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'; autoCorrect?: boolean }) {
+  const { label, onToggleVisibility, ...inputProps } = props;
+  return <View style={styles.field}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.inputShell}>
+      <TextInput {...inputProps} style={styles.input} placeholderTextColor="#6E7F98" />
+      {onToggleVisibility && <Pressable accessibilityRole="button" accessibilityLabel={props.secureTextEntry ? 'Mostrar contraseña' : 'Ocultar contraseña'} onPress={onToggleVisibility} style={styles.eyeButton} hitSlop={8}>
+        <MaterialCommunityIcons name={props.secureTextEntry ? 'eye-outline' : 'eye-off-outline'} size={21} color="#8FA4BC" />
+      </Pressable>}
+    </View>
+  </View>;
 }
 
 const styles = StyleSheet.create({
@@ -96,7 +105,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   field: { flex: 1, marginBottom: 15 },
   label: { color: '#B4C7DC', fontFamily: font.bold, fontSize: 12, marginBottom: 7 },
-  input: { minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: '#263C58', backgroundColor: '#0D1B30', color: colors.white, fontFamily: font.semibold, fontSize: 14, paddingHorizontal: 14 },
+  input: { minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: '#263C58', backgroundColor: '#0D1B30', color: colors.white, fontFamily: font.semibold, fontSize: 14, paddingLeft: 14, paddingRight: 48 },
+  inputShell: { position: 'relative', justifyContent: 'center' },
+  eyeButton: { position: 'absolute', right: 12, minWidth: 30, minHeight: 36, alignItems: 'center', justifyContent: 'center' },
   avatarSection: { marginTop: 2, marginBottom: 19 },
   avatarList: { flexDirection: 'row', gap: 9 },
   avatarOption: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: '#2A405B', backgroundColor: '#0D1B30', alignItems: 'center', justifyContent: 'center' },
