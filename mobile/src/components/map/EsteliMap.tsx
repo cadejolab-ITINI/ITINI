@@ -109,7 +109,8 @@ export function EsteliMap({ destinations, selected, userLocation, onDestinationP
           key={destination.id}
           id={`destination-${destination.id}`}
           lngLat={toLngLat(destination)}
-          anchor="center"
+          // La punta del pin debe coincidir con la coordenada real del destino.
+          anchor="bottom"
           onPress={(event) => { event.stopPropagation?.(); onDestinationPress(destination); }}
         >
           <View accessible accessibilityRole="button" accessibilityLabel={`Ver ${destination.name}`} style={destination.id === selected?.id ? styles.destinationMarkerSelected : styles.destinationMarker}>

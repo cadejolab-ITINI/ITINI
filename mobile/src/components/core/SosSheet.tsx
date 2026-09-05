@@ -84,7 +84,7 @@ export function SosSheet({ visible, onClose, onSent }: { visible: boolean; onClo
             <Text style={[styles.holdLabel, styles.foreground]}>MANTENER</Text>
           </Pressable>
           <Text style={styles.instruction}>MANTÉN PRESIONADO (2.5S)</Text>
-          <Text style={styles.explanation}>Presioná sin soltar para emitir la alerta GPS de emergencia. En el Hackathon se registra únicamente como demostración local.</Text>
+          <Text style={styles.explanation}>Presioná sin soltar para emitir la alerta GPS de emergencia. Se registra de forma local y no contacta instituciones externas.</Text>
         </View>
       ) : canceling ? (
         <View style={styles.cancelPanel}>
