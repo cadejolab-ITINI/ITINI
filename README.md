@@ -11,6 +11,7 @@ ITINI es un MVP movil de ecoturismo sostenible pensado para Android y iOS. La ap
 - Registro e inicio de sesión local con usuario, contraseña protegida y avatar emoji.
 - Lectura offline de informacion clave ya guardada.
 - Horarios referenciales de Cotran Norte y Cotran Sur guardados en SQLite para consulta offline, con fuente, teléfono, fecha de consulta y estado de verificación.
+- Selector de buses con croquis interactivo de Nicaragua, sus 15 departamentos, dos regiones autónomas, lagos y Ometepe. Estelí está habilitado en la demo. [Fuentes cartográficas](docs/NICARAGUA-MAP.md).
 - Interfaz oscura consistente con la identidad visual de ITINI.
 - Fichas de destinos con dificultad, tiempos, sostenibilidad e impacto comunitario.
 - Directorio de guias certificados y panel de precios verificados.

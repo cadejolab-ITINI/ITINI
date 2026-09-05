@@ -4,14 +4,10 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/ui/Screen';
+import { NicaraguaDepartmentMap } from '@/components/buses/NicaraguaDepartmentMap';
 import { colors, font } from '@/constants/theme';
 import { useAppData } from '@/providers/AppDataProvider';
 import type { BusTerminal } from '@/types/domain';
-
-const departments = [
-  'Boaco', 'Carazo', 'Chinandega', 'Chontales', 'Estelí', 'Granada', 'Jinotega',
-  'León', 'Madriz', 'Managua', 'Masaya', 'Matagalpa', 'Nueva Segovia', 'Rivas', 'Río San Juan',
-];
 
 export default function BusesScreen() {
   const { busTerminals, busSchedules } = useAppData();
@@ -20,24 +16,14 @@ export default function BusesScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView key={department ?? 'nicaragua'} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headingRow}>
           <View style={styles.headingIcon}><MaterialCommunityIcons name="bus" size={25} color={colors.sky} /></View>
           <View style={styles.headingCopy}><Text style={styles.title}>Horarios de buses</Text></View>
         </View>
         {!department && <>
-          <Text style={styles.sectionIntro}>Elegí un departamento para consultar sus terminales.</Text>
-          <View style={styles.departmentList}>
-            {departments.map(item => {
-              const available = item === 'Estelí';
-              return <Pressable key={item} disabled={!available} onPress={() => setDepartment(item)} accessibilityRole="button" accessibilityState={{ disabled: !available }} style={[styles.departmentRow, !available && styles.departmentDisabled]}>
-                <View style={[styles.departmentIcon, available && styles.departmentIconActive]}><MaterialCommunityIcons name={available ? 'map-marker-radius-outline' : 'lock-outline'} size={18} color={available ? colors.emerald : colors.textMuted} /></View>
-                <Text style={[styles.departmentName, !available && styles.departmentNameDisabled]}>{item}</Text>
-                <Text style={[styles.departmentStatus, available && styles.departmentStatusActive]}>{available ? 'Disponible' : 'Próximamente'}</Text>
-                {available && <MaterialCommunityIcons name="chevron-right" size={20} color={colors.emerald} />}
-              </Pressable>;
-            })}
-          </View>
+          <Text style={styles.sectionIntro}>Seleccioná el departamento en el que vas a viajar.</Text>
+          <NicaraguaDepartmentMap onSelectEsteli={() => setDepartment('Estelí')} />
         </>}
         {department && <>
           <Pressable onPress={() => setDepartment(null)} accessibilityRole="button" style={styles.backButton}><MaterialCommunityIcons name="arrow-left" size={17} color={colors.sky} /><Text style={styles.backText}>Cambiar departamento</Text></Pressable>
@@ -84,16 +70,7 @@ const styles = StyleSheet.create({
   headingIcon: { width: 45, height: 45, borderRadius: 14, borderWidth: 1, borderColor: '#245277', backgroundColor: '#0D2741', alignItems: 'center', justifyContent: 'center' },
   headingCopy: { flex: 1 },
   title: { color: colors.text, fontFamily: font.black, fontSize: 22 },
-  sectionIntro: { color: colors.textMuted, fontFamily: font.regular, fontSize: 11, lineHeight: 17 },
-  departmentList: { borderRadius: 16, borderWidth: 1, borderColor: '#223B57', backgroundColor: '#111C30', paddingHorizontal: 12 },
-  departmentRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderBottomColor: '#21354D' },
-  departmentDisabled: { opacity: 0.65 },
-  departmentIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#1D2A40', alignItems: 'center', justifyContent: 'center' },
-  departmentIconActive: { backgroundColor: 'rgba(19,184,109,0.14)' },
-  departmentName: { flex: 1, color: colors.text, fontFamily: font.extraBold, fontSize: 12 },
-  departmentNameDisabled: { color: '#A2B0C0' },
-  departmentStatus: { color: '#71839B', fontFamily: font.semibold, fontSize: 9 },
-  departmentStatusActive: { color: colors.emerald },
+  sectionIntro: { color: colors.textMuted, fontFamily: font.regular, fontSize: 13, lineHeight: 20 },
   backButton: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
   backText: { color: colors.sky, fontFamily: font.bold, fontSize: 10 },
   departmentTitle: { color: colors.text, fontFamily: font.black, fontSize: 19 },
