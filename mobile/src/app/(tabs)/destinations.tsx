@@ -12,24 +12,24 @@ type Filter = 'Todos' | Difficulty;
 const filters: Filter[] = ['Todos', 'Fácil', 'Medio', 'Avanzado'];
 
 export default function DestinationsScreen() {
-  const { destinations } = useAppData();
+  const { destinations, settings } = useAppData();
   const [filter, setFilter] = useState<Filter>('Todos');
   const results = useMemo(() => destinations.filter((item) => filter === 'Todos' || item.difficulty === filter), [destinations, filter]);
 
   return (
-    <Screen>
+    <Screen style={settings.lightMode ? styles.screenLight : undefined}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Destinos</Text>
-        <View style={styles.filterPanel}>
+        <Text style={[styles.title, settings.lightMode && styles.titleLight]}>Destinos</Text>
+        <View style={[styles.filterPanel, settings.lightMode && styles.cardLight]}>
           <Text style={styles.filterLabel}>FILTRAR POR EXIGENCIA:</Text>
           <View style={styles.filters}>{filters.map((item) => <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, filter === item && styles.filterActive]}><Text style={[styles.filterText, filter === item && styles.filterTextActive]}>{item}</Text></Pressable>)}</View>
         </View>
 
         {results.map((destination) => (
-          <View style={styles.card} key={destination.id}>
-            <View style={styles.titleRow}><Text style={styles.destinationTitle}>{destination.name}</Text><View style={styles.badge}><Text style={styles.badgeText}>{destination.difficulty}</Text></View></View>
+          <View style={[styles.card, settings.lightMode && styles.cardLight]} key={destination.id}>
+            <View style={styles.titleRow}><Text style={[styles.destinationTitle, settings.lightMode && styles.darkText]}>{destination.name}</Text><View style={styles.badge}><Text style={styles.badgeText}>{destination.difficulty}</Text></View></View>
             <Text style={styles.meta}>{destination.distanceKm.toFixed(1)} km • {(destination.durationMinutes / 60).toFixed(1)} hrs</Text>
-            <Text style={styles.description}>{destination.description}</Text>
+            <Text style={[styles.description, settings.lightMode && styles.darkText]}>{destination.description}</Text>
             <Pressable onPress={() => router.push({ pathname: '/(tabs)', params: { destinationId: destination.id } } as Href)} style={styles.mapButton}><MaterialCommunityIcons name="map-marker-outline" size={17} color="#17BDF1" /><Text style={styles.mapButtonText}>Ver en el Mapa</Text></Pressable>
           </View>
         ))}
@@ -40,8 +40,12 @@ export default function DestinationsScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: 20, paddingTop: 34, paddingBottom: 26, gap: 13 },
+  screenLight: { backgroundColor: '#F4F7FB' },
   title: { color: '#FFFFFF', fontFamily: font.black, fontSize: 22, marginBottom: 2 },
+  titleLight: { color: '#172B43' },
   filterPanel: { borderRadius: 16, borderWidth: 1, borderColor: '#22334E', backgroundColor: '#111A2D', padding: 12 },
+  cardLight: { borderColor: '#D4DFEA', backgroundColor: '#FFFFFF' },
+  darkText: { color: '#172B43' },
   filterLabel: { color: '#82A0C0', fontFamily: font.bold, fontSize: 9 },
   filters: { flexDirection: 'row', gap: 7, marginTop: 9 },
   filter: { minHeight: 33, paddingHorizontal: 14, borderRadius: 11, borderWidth: 1, borderColor: '#21314B', backgroundColor: '#03091A', alignItems: 'center', justifyContent: 'center' },

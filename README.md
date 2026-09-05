@@ -10,6 +10,7 @@ ITINI es un MVP movil de ecoturismo sostenible pensado para Android y iOS. La ap
 - Persistencia local con SQLite para cuentas, perfiles, destinos, comunidad y presupuestos.
 - Registro e inicio de sesión local con usuario, contraseña protegida y avatar emoji.
 - Lectura offline de informacion clave ya guardada.
+- Tema claro u oscuro guardado localmente, incluido el estilo del mapa.
 - Fichas de destinos con dificultad, tiempos, sostenibilidad e impacto comunitario.
 - Directorio de guias certificados y panel de precios verificados.
 - Modulo SOS en modo demo con captura de coordenadas reales.

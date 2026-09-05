@@ -104,5 +104,5 @@ export function EsteliMap(props: EsteliMapProps) {
   }, [ready, props.recenterToken]);
 
   const message = error || (props.offline ? 'Modo desconectado · fichas disponibles. El mapa base necesita internet.' : tileError ? 'Sin conexión al mapa base. Podés consultar los destinos.' : !ready ? 'Cargando mapa de Estelí…' : '');
-  return <div className="itini-real-map" onPointerDown={props.onMapPress}><div ref={container} className="itini-leaflet" aria-label="Mapa interactivo de Estelí" />{message && <div className="itini-map-message" role="status">{message}</div>}</div>;
+  return <div className={`itini-real-map ${props.theme === 'light' ? 'itini-map-light' : ''}`} onPointerDown={props.onMapPress}><div ref={container} className="itini-leaflet" aria-label="Mapa interactivo de Estelí" />{message && <div className="itini-map-message" role="status">{message}</div>}</div>;
 }

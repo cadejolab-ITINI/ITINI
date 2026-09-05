@@ -25,6 +25,13 @@ const OSM_STYLE: StyleSpecification = {
   layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm', paint: { 'raster-opacity': 1 } }],
 };
 
+const OSM_LIGHT_STYLE = OSM_STYLE;
+const OSM_DARK_STYLE: StyleSpecification = {
+  ...OSM_STYLE,
+  name: 'ITINI OpenStreetMap oscuro',
+  layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.82, 'raster-brightness-max': 0.48, 'raster-saturation': -0.65 } }],
+};
+
 const OSM_OFFLINE_STYLE: StyleSpecification = {
   version: 8,
   name: 'ITINI OpenStreetMap offline',
@@ -34,7 +41,7 @@ const OSM_OFFLINE_STYLE: StyleSpecification = {
 
 const toLngLat = (point: { latitude: number; longitude: number }): [number, number] => [point.longitude, point.latitude];
 
-export function EsteliMap({ destinations, selected, userLocation, onDestinationPress, onMapPress, recenterToken, route, offline }: EsteliMapProps) {
+export function EsteliMap({ destinations, selected, userLocation, onDestinationPress, onMapPress, recenterToken, route, offline, theme = 'dark' }: EsteliMapProps) {
   const camera = useRef<React.ElementRef<typeof Camera>>(null);
 
   const routeData = useMemo(() => route ? ({
@@ -75,7 +82,7 @@ export function EsteliMap({ destinations, selected, userLocation, onDestinationP
   return (
     <Map
       style={styles.map}
-      mapStyle={offline ? OSM_OFFLINE_STYLE : OSM_STYLE}
+      mapStyle={offline ? OSM_OFFLINE_STYLE : theme === 'light' ? OSM_LIGHT_STYLE : OSM_DARK_STYLE}
       attribution
       attributionPosition={{ bottom: 8, left: 8 }}
       logo={false}

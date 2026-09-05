@@ -12,7 +12,7 @@ import type { BudgetCategory } from '@/types/domain';
 const categories: BudgetCategory[] = ['Transporte', 'Hospedaje', 'Alimentación', 'Guía', 'Entrada', 'Otro'];
 
 export default function BudgetScreen() {
-  const { budgetItems, addBudgetItem, removeBudgetItem } = useAppData();
+  const { budgetItems, addBudgetItem, removeBudgetItem, settings } = useAppData();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<BudgetCategory>('Transporte');
@@ -32,7 +32,7 @@ export default function BudgetScreen() {
   };
 
   return (
-    <Screen>
+    <Screen style={settings.lightMode ? styles.screenLight : undefined}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View>
@@ -40,7 +40,7 @@ export default function BudgetScreen() {
             <AppText variant="caption">Tus cambios permanecen disponibles sin internet.</AppText>
           </View>
 
-          <View style={styles.totalCard}>
+          <View style={[styles.totalCard, settings.lightMode && styles.cardLight]}>
             <View>
               <AppText variant="label" style={styles.totalLabel}>TOTAL ESTIMADO</AppText>
               <AppText variant="title">C$ {total.toLocaleString('es-NI')}</AppText>
@@ -48,10 +48,10 @@ export default function BudgetScreen() {
             <View style={styles.wallet}><MaterialCommunityIcons name="wallet-outline" size={29} color={colors.orange} /></View>
           </View>
 
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, settings.lightMode && styles.cardLight]}>
             <AppText variant="headline">Agregar gasto</AppText>
-            <TextInput value={name} onChangeText={setName} placeholder="Ej. Transporte a La Garnacha" placeholderTextColor={colors.textMuted} style={styles.input} accessibilityLabel="Concepto del gasto" />
-            <TextInput value={amount} onChangeText={setAmount} placeholder="Monto en córdobas" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" style={styles.input} accessibilityLabel="Monto del gasto en córdobas" />
+            <TextInput value={name} onChangeText={setName} placeholder="Ej. Transporte a La Garnacha" placeholderTextColor={colors.textMuted} style={[styles.input, settings.lightMode && styles.fieldLight]} accessibilityLabel="Concepto del gasto" />
+            <TextInput value={amount} onChangeText={setAmount} placeholder="Monto en córdobas" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" style={[styles.input, settings.lightMode && styles.fieldLight]} accessibilityLabel="Monto del gasto en córdobas" />
             <View style={styles.categories}>
               {categories.map((item) => (
                 <Pressable key={item} onPress={() => setCategory(item)} style={[styles.category, category === item && styles.categoryActive]} accessibilityRole="button" accessibilityState={{ selected: category === item }}>
@@ -66,7 +66,7 @@ export default function BudgetScreen() {
           <View style={styles.listSection}>
             <AppText variant="headline">Detalle</AppText>
             {budgetItems.map((item) => (
-              <View key={item.id} style={styles.item}>
+              <View key={item.id} style={[styles.item, settings.lightMode && styles.cardLight]}>
                 <View style={styles.itemIcon}><MaterialCommunityIcons name="cash" size={20} color={colors.sky} /></View>
                 <View style={styles.itemText}>
                   <AppText variant="subheading">{item.name}</AppText>
@@ -87,6 +87,9 @@ export default function BudgetScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  screenLight: { backgroundColor: '#F4F7FB' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#D4DFEA' },
+  fieldLight: { backgroundColor: '#F1F5F9', borderColor: '#C7D5E3', color: '#172B43' },
   content: { padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   totalCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.xl },
   totalLabel: { color: colors.orange, letterSpacing: 1.4 },

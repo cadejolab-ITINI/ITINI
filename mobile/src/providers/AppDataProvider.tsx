@@ -25,7 +25,7 @@ type AppDataContextValue = Snapshot & {
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 export function AppDataProvider({ children }: PropsWithChildren) {
   const db = useSQLiteContext();
-  const [data, setData] = useState<Snapshot>({ destinations: [], budgetItems: [], profile: null, communityPosts: [], guides: [], prices: [], settings: { offlineMode: false, reducedData: false }, stats: { visits: 0, reviews: 0 } });
+  const [data, setData] = useState<Snapshot>({ destinations: [], budgetItems: [], profile: null, communityPosts: [], guides: [], prices: [], settings: { offlineMode: false, reducedData: false, lightMode: false }, stats: { visits: 0, reviews: 0 } });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(() => serializeDatabase(db, async () => {
