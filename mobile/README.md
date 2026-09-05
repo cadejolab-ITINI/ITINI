@@ -6,7 +6,7 @@ Aplicación Expo SDK 57 con funcionamiento offline-first.
 
 Al entrar desde la pantalla de compromisos se puede iniciar sesión o crear una cuenta. Nombre, usuario, avatar y presupuestos se guardan en SQLite en el dispositivo. La contraseña nunca se guarda en texto plano: se almacena un hash SHA-256 con una sal aleatoria. Para producción se recomienda migrar la autenticación a un proveedor backend con sesiones y recuperación de cuenta.
 
-En Ajustes, “Tema claro” cambia la interfaz y el mapa entre claro y oscuro; la selección queda guardada en el dispositivo.
+La aplicación utiliza el tema oscuro de ITINI para mantener una experiencia visual consistente y legible.
 
 ## Ejecutar
 

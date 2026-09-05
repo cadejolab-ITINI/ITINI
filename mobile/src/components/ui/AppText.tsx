@@ -1,7 +1,6 @@
 import { Text, type TextProps, type TextStyle } from 'react-native';
 
 import { colors, font } from '@/constants/theme';
-import { useAppData } from '@/providers/AppDataProvider';
 
 type Variant = 'title' | 'headline' | 'subheading' | 'body' | 'caption' | 'label';
 
@@ -15,8 +14,6 @@ const variants: Record<Variant, TextStyle> = {
 };
 
 export function AppText({ style, ...props }: TextProps & { variant?: Variant }) {
-  const { settings } = useAppData();
   const { variant = 'body', ...textProps } = props;
-  const lightColor = variant === 'caption' ? '#60758C' : '#172B43';
-  return <Text {...textProps} style={[variants[variant], settings.lightMode && { color: lightColor }, style]} allowFontScaling maxFontSizeMultiplier={1.5} />;
+  return <Text {...textProps} style={[variants[variant], style]} allowFontScaling maxFontSizeMultiplier={1.5} />;
 }

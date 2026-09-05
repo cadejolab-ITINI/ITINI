@@ -37,7 +37,6 @@ export default function MapScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const offline = settings.offlineMode;
-  const light = settings.lightMode;
   const setOffline = (value: boolean) => { void updateSetting('offlineMode', value); };
   const [sheet, setSheet] = useState<ActiveSheet>(null);
   const [toast, setToast] = useState(false);
@@ -154,16 +153,16 @@ export default function MapScreen() {
 
   return (
     <View style={styles.screen}>
-      <EsteliMap destinations={destinations} selected={selected} userLocation={location} onDestinationPress={selectDestination} onMapPress={dismissSearch} route={route} recenterToken={recenterToken} offline={offline} theme={light ? 'light' : 'dark'} />
+      <EsteliMap destinations={destinations} selected={selected} userLocation={location} onDestinationPress={selectDestination} onMapPress={dismissSearch} route={route} recenterToken={recenterToken} offline={offline} />
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay} edges={['top']}>
         {toast && <View style={styles.toast}><Text style={styles.toastText}>🚨 ¡Señal SOS emitida en Modo Demo!</Text></View>}
 
-        <View style={[styles.userPanel, light && styles.userPanelLight]}>
+        <View style={styles.userPanel}>
           <View style={styles.userRow}>
             <View style={styles.avatar}><Text style={styles.avatarText}>{profile?.avatar ?? '🥾'}</Text></View>
             <View style={styles.userCopy}>
-              <Text style={[styles.userName, light && styles.darkText]}>{profile?.name ?? 'Explorador ITINI'}</Text>
+              <Text style={styles.userName}>{profile?.name ?? 'Explorador ITINI'}</Text>
               <Text style={styles.username}>{profile?.username ?? '@itini'}</Text>
             </View>
             <Pressable onPress={() => setStatusOpen((current) => !current)} style={[styles.status, offline && styles.statusOffline]} accessibilityRole="button">
@@ -180,7 +179,7 @@ export default function MapScreen() {
             </View>
           )}
 
-          <View style={[styles.searchBar, light && styles.searchBarLight, searchOpen && styles.searchActive]}>
+          <View style={[styles.searchBar, searchOpen && styles.searchActive]}>
             <MaterialCommunityIcons name="magnify" size={20} color="#19B9EF" />
             <TextInput
               value={search}
@@ -192,18 +191,18 @@ export default function MapScreen() {
               onFocus={() => setSearchOpen(true)}
               placeholder="Buscar destino en Estelí…"
               placeholderTextColor="#65748D"
-              style={[styles.searchInput, light && styles.searchInputLight]}
+              style={styles.searchInput}
               accessibilityLabel="Buscar destino en Estelí"
             />
             {search.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Limpiar búsqueda" onPress={() => { setSearch(''); setSearchOpen(true); searchInput.current?.focus(); }}><MaterialCommunityIcons name="close-circle" size={19} color="#65748D" /></Pressable>}
           </View>
 
           {searchOpen && (
-            <View style={[styles.suggestions, light && styles.suggestionsLight]}>
+            <View style={styles.suggestions}>
               {recommendations.map((destination, index) => (
                 <Pressable key={destination.id} accessibilityRole="button" accessibilityLabel={`Seleccionar ${destination.name}`} onPress={() => selectDestination(destination)} style={styles.suggestion}>
                   <View style={[styles.suggestionDot, { backgroundColor: index % 3 === 0 ? colors.orange : index % 3 === 1 ? colors.emerald : '#17ADE4' }]} />
-                  <Text style={[styles.suggestionName, light && styles.darkText]}>{destination.name}</Text>
+                  <Text style={styles.suggestionName}>{destination.name}</Text>
                   <View style={styles.suggestionDifficulty}><Text style={styles.suggestionDifficultyText}>{destination.difficulty}</Text></View>
                 </Pressable>
               ))}
@@ -219,15 +218,15 @@ export default function MapScreen() {
               <FloatingQuickBubble id={item.id} index={index} active={sheet === null && !searchOpen && !statusOpen}>
                 <View style={[styles.quickBubble, { backgroundColor: item.color }]}><MaterialCommunityIcons name={item.icon} size={24} color="#FFFFFF" /></View>
               </FloatingQuickBubble>
-              <Text style={[styles.quickLabel, light && styles.quickLabelLight, item.id === 'sos' && styles.sosLabel]}>{item.label}</Text>
+              <Text style={[styles.quickLabel, item.id === 'sos' && styles.sosLabel]}>{item.label}</Text>
             </Pressable>
           ))}
         </View>
 
-        <Pressable disabled={locating} onPress={locate} style={[styles.gpsButton, light && styles.gpsButtonLight]} accessibilityRole="button" accessibilityLabel="Actualizar ubicación GPS">
+        <Pressable disabled={locating} onPress={locate} style={styles.gpsButton} accessibilityRole="button" accessibilityLabel="Actualizar ubicación GPS">
           <MaterialCommunityIcons name={locating ? 'progress-clock' : 'crosshairs-gps'} size={26} color="#FFFFFF" />
         </Pressable>
-        {(locationError || (!location && !locating)) && sheet !== 'gps' && <Pressable accessibilityRole="button" accessibilityLabel="Activar permiso GPS" onPress={locate} style={[styles.locationError, light && styles.locationErrorLight]}><Text style={[styles.locationErrorText, light && styles.locationErrorTextLight]}>{locationError || 'Activá tu ubicación para verte en el mapa.'} Tocá aquí.</Text></Pressable>}
+        {(locationError || (!location && !locating)) && sheet !== 'gps' && <Pressable accessibilityRole="button" accessibilityLabel="Activar permiso GPS" onPress={locate} style={styles.locationError}><Text style={styles.locationErrorText}>{locationError || 'Activá tu ubicación para verte en el mapa.'} Tocá aquí.</Text></Pressable>}
         {route && selected && <View style={styles.routeSummary}>
           <Pressable accessibilityRole="button" accessibilityLabel="Ver detalle de la ruta" onPress={() => setSheet('destination')} style={{ flex: 1 }}>
             <Text style={styles.routeTitle}>{selected.name}</Text>
@@ -252,13 +251,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#020719' },
   overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 1 },
   userPanel: { position: 'absolute', top: 44, left: 22, right: 22, minHeight: 105, borderRadius: 18, borderWidth: 1, borderColor: '#1C2B45', backgroundColor: 'rgba(3, 9, 25, 0.94)', padding: 12, zIndex: 20 },
-  userPanelLight: { borderColor: '#D5E0EA', backgroundColor: 'rgba(255,255,255,0.95)' },
   userRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#078CB5', backgroundColor: '#0C162B', alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 18 },
   userCopy: { flex: 1, marginLeft: 10 },
   userName: { color: '#FFFFFF', fontFamily: font.extraBold, fontSize: 13 },
-  darkText: { color: '#172B43' },
   username: { marginTop: 2, color: '#6F7E95', fontFamily: font.semibold, fontSize: 9 },
   status: { minHeight: 28, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(33,211,156,0.36)', backgroundColor: 'rgba(11,100,76,0.2)', flexDirection: 'row', alignItems: 'center', gap: 6 },
   statusOffline: { borderColor: 'rgba(245,157,29,0.4)', backgroundColor: 'rgba(104,61,8,0.25)' },
@@ -272,12 +269,9 @@ const styles = StyleSheet.create({
   offlineOptionDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#F59D1D' },
   statusOptionText: { color: '#DDE7F5', fontFamily: font.bold, fontSize: 10 },
   searchBar: { minHeight: 36, marginTop: 9, borderRadius: 11, borderWidth: 1, borderColor: '#1D2B43', backgroundColor: '#111A2D', paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  searchBarLight: { borderColor: '#C7D5E3', backgroundColor: '#F1F5F9' },
   searchActive: { borderColor: '#13BDF0' },
   searchInput: { flex: 1, color: '#FFFFFF', fontFamily: font.semibold, fontSize: 11, outlineStyle: 'none' } as never,
-  searchInputLight: { color: '#1D324D' },
   suggestions: { position: 'absolute', top: 105, left: 12, right: 12, borderRadius: 12, borderWidth: 1, borderColor: '#1D2B43', backgroundColor: '#071024', paddingVertical: 4, zIndex: 25, ...shadow },
-  suggestionsLight: { borderColor: '#CBD8E5', backgroundColor: '#FFFFFF' },
   suggestion: { minHeight: 35, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   suggestionDot: { width: 8, height: 8, borderRadius: 4 },
   suggestionName: { flex: 1, color: '#F4F7FC', fontFamily: font.bold, fontSize: 11 },
@@ -291,18 +285,14 @@ const styles = StyleSheet.create({
   quickItem: { alignItems: 'center', gap: 3 },
   quickBubble: { width: 43, height: 43, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)', alignItems: 'center', justifyContent: 'center', ...shadow },
   quickLabel: { color: '#E5EBF4', fontFamily: font.extraBold, fontSize: 8 },
-  quickLabelLight: { color: '#203A56' },
   sosLabel: { color: '#F0444D' },
   gpsButton: { position: 'absolute', left: 20, bottom: 136, width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: '#2F5978', backgroundColor: '#0C2038', alignItems: 'center', justifyContent: 'center', ...shadow },
-  gpsButtonLight: { borderColor: '#B6C9DA', backgroundColor: '#1976D2' },
   routeSummary: { position: 'absolute', left: 18, right: 18, bottom: 106, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#24455F', backgroundColor: '#07142DF5', flexDirection: 'row', alignItems: 'center', gap: 4 },
   routeTitle: { fontFamily: font.extraBold, fontSize: 12, color: '#F4FAFF' },
   routeText: { fontFamily: font.semibold, fontSize: 11, color: '#73D3FF', marginTop: 3 },
   routeHint: { fontFamily: font.regular, fontSize: 9, color: '#EEBA79', marginTop: 4 },
   locationError: { position: 'absolute', left: 18, right: 80, bottom: 108, borderRadius: 9, padding: 8, backgroundColor: 'rgba(7,16,36,0.94)' },
   locationErrorText: { color: '#F59D1D', fontFamily: font.semibold, fontSize: 9 },
-  locationErrorLight: { backgroundColor: 'rgba(255,255,255,0.95)', borderWidth: 1, borderColor: '#F0C77A' },
-  locationErrorTextLight: { color: '#A15C00' },
   toast: { position: 'absolute', top: 14, right: 8, width: 186, minHeight: 48, borderRadius: 999, backgroundColor: '#12C68A', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, zIndex: 60, ...shadow },
   toastText: { color: '#FFFFFF', fontFamily: font.extraBold, fontSize: 10, textAlign: 'center' },
 });

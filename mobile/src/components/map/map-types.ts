@@ -7,7 +7,6 @@ export type EsteliMapProps = {
   userLocation: UserLocation | null;
   route: RoadRoute | null;
   offline: boolean;
-  theme?: 'light' | 'dark';
   recenterToken: number;
   onDestinationPress: (destination: Destination) => void;
   onMapPress: () => void;
