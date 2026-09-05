@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import type { BudgetCategory, VerificationStatus } from '@/types/domain';
+import type { BudgetCategory, BusSchedule, BusTerminal, VerificationStatus } from '@/types/domain';
 import { isText, parseArray } from './validation';
 import { transaction } from './transactions';
 
@@ -7,6 +7,27 @@ export type Guide = { id: string; name: string; base: string; rating: number; cr
 export type CatalogPrice = { id: string; name: string; amount: number; category: BudgetCategory; verificationStatus: VerificationStatus };
 export type Settings = { offlineMode: boolean; reducedData: boolean };
 export type ProfileStats = { visits: number; reviews: number };
+
+export async function listBusTerminals(db: SQLiteDatabase): Promise<BusTerminal[]> {
+  const rows = await db.getAllAsync<{
+    id: string; name: BusTerminal['name']; direction: string; address: string; phone: string; source_url: string; checked_at: string;
+  }>('SELECT id,name,direction,address,phone,source_url,checked_at FROM bus_terminals ORDER BY id');
+  return rows.map(row => ({ id: row.id, name: row.name, direction: row.direction, address: row.address, phone: row.phone, sourceUrl: row.source_url, checkedAt: row.checked_at }));
+}
+
+export async function listBusSchedules(db: SQLiteDatabase): Promise<BusSchedule[]> {
+  const rows = await db.getAllAsync<{
+    id: string; terminal_id: string; terminal_name: BusTerminal['name']; destination: string; departure_time: string; days: string;
+    service_type: string; fare_cordobas: number | null; duration_minutes: number | null; notes: string; source_url: string;
+    checked_at: string; verification_status: BusSchedule['verificationStatus'];
+  }>(`SELECT s.*, t.name AS terminal_name FROM bus_schedules s JOIN bus_terminals t ON t.id=s.terminal_id ORDER BY s.terminal_id, s.departure_time`);
+  return rows.map(row => ({
+    id: row.id, terminalId: row.terminal_id, terminalName: row.terminal_name, destination: row.destination,
+    departureTime: row.departure_time, days: row.days, serviceType: row.service_type, fareCordobas: row.fare_cordobas,
+    durationMinutes: row.duration_minutes, notes: row.notes, sourceUrl: row.source_url, checkedAt: row.checked_at,
+    verificationStatus: row.verification_status,
+  }));
+}
 
 export async function listGuides(db: SQLiteDatabase): Promise<Guide[]> {
   const rows = await db.getAllAsync<Omit<Guide, 'skills' | 'verificationStatus'> & { skills_json: string; verification_status: VerificationStatus }>('SELECT * FROM guides WHERE active=1 ORDER BY name');

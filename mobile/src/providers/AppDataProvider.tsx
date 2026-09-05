@@ -5,11 +5,12 @@ import * as repository from '@/database/repositories';
 import * as catalog from '@/database/catalog';
 import { newId } from '@/database/ids';
 import { serializeDatabase } from '@/database/transactions';
-import type { BudgetCategory, BudgetItem, CommunityPost, Destination, Profile } from '@/types/domain';
+import type { BudgetCategory, BudgetItem, BusSchedule, BusTerminal, CommunityPost, Destination, Profile } from '@/types/domain';
 
 type Snapshot = {
   destinations: Destination[]; budgetItems: BudgetItem[]; profile: Profile | null; communityPosts: CommunityPost[];
   guides: catalog.Guide[]; prices: catalog.CatalogPrice[]; settings: catalog.Settings; stats: catalog.ProfileStats;
+  busTerminals: BusTerminal[]; busSchedules: BusSchedule[];
 };
 type AppDataContextValue = Snapshot & {
   loading: boolean; error: string | null; refresh: () => Promise<void>;
@@ -25,16 +26,16 @@ type AppDataContextValue = Snapshot & {
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 export function AppDataProvider({ children }: PropsWithChildren) {
   const db = useSQLiteContext();
-  const [data, setData] = useState<Snapshot>({ destinations: [], budgetItems: [], profile: null, communityPosts: [], guides: [], prices: [], settings: { offlineMode: false, reducedData: false }, stats: { visits: 0, reviews: 0 } });
+  const [data, setData] = useState<Snapshot>({ destinations: [], budgetItems: [], profile: null, communityPosts: [], guides: [], prices: [], settings: { offlineMode: false, reducedData: false }, stats: { visits: 0, reviews: 0 }, busTerminals: [], busSchedules: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(() => serializeDatabase(db, async () => {
-    const [destinations, budgetItems, profile, communityPosts, guides, prices, settings, stats] = await Promise.all([
+    const [destinations, budgetItems, profile, communityPosts, guides, prices, settings, stats, busTerminals, busSchedules] = await Promise.all([
       repository.listDestinations(db), repository.listBudgetItems(db), repository.getProfile(db), repository.listCommunityPosts(db),
-      catalog.listGuides(db), catalog.listPrices(db), catalog.getSettings(db), catalog.getProfileStats(db),
+      catalog.listGuides(db), catalog.listPrices(db), catalog.getSettings(db), catalog.getProfileStats(db), catalog.listBusTerminals(db), catalog.listBusSchedules(db),
     ]);
     if (!profile) throw new Error('No se encontró el perfil local. No se borraron tus datos.');
-    setData({ destinations, budgetItems, profile, communityPosts, guides, prices, settings, stats });
+    setData({ destinations, budgetItems, profile, communityPosts, guides, prices, settings, stats, busTerminals, busSchedules });
   }), [db]);
   const report = (cause: unknown) => setError(cause instanceof Error ? cause.message : 'No se pudieron guardar los datos. Intentá nuevamente.');
   const refresh = useCallback(async () => {

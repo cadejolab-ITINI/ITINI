@@ -81,3 +81,29 @@ export type CommunityPost = {
   photoUri: string | null;
   createdAt: string;
 };
+
+export type BusTerminal = {
+  id: string;
+  name: 'Cotran Norte' | 'Cotran Sur';
+  direction: string;
+  address: string;
+  phone: string;
+  sourceUrl: string;
+  checkedAt: string;
+};
+
+export type BusSchedule = {
+  id: string;
+  terminalId: string;
+  terminalName: BusTerminal['name'];
+  destination: string;
+  departureTime: string;
+  days: string;
+  serviceType: string;
+  fareCordobas: number | null;
+  durationMinutes: number | null;
+  notes: string;
+  sourceUrl: string;
+  checkedAt: string;
+  verificationStatus: 'reference' | 'verified';
+};
