@@ -26,7 +26,7 @@ export function SosSheet({ visible, onClose, onSent }: { visible: boolean; onClo
 
   useEffect(() => {
     contentTransition.setValue(0);
-    Animated.timing(contentTransition, { toValue: 1, duration: 240, useNativeDriver: true }).start();
+    Animated.timing(contentTransition, { toValue: 1, duration: 240, useNativeDriver: false }).start();
   }, [event, canceling]);
 
   const beginHold = () => {
@@ -66,7 +66,7 @@ export function SosSheet({ visible, onClose, onSent }: { visible: boolean; onClo
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <Animated.View style={{ opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
+      <Animated.View style={{ opacity: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
       {!event ? (
         <View style={styles.holdArea}>
           <Pressable

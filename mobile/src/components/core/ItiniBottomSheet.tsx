@@ -28,16 +28,19 @@ export function ItiniBottomSheet({
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(70)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.96)).current;
 
   useEffect(() => {
     if (!visible) return;
     translateY.setValue(70);
     opacity.setValue(0);
+    scale.setValue(0.96);
     Animated.parallel([
-      Animated.spring(translateY, { toValue: 0, damping: 19, stiffness: 190, mass: 0.85, useNativeDriver: Platform.OS !== 'web' }),
-      Animated.timing(opacity, { toValue: 1, duration: 190, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.spring(translateY, { toValue: 0, damping: 20, stiffness: 170, mass: 0.9, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.spring(scale, { toValue: 1, damping: 20, stiffness: 170, mass: 0.9, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: Platform.OS !== 'web' }),
     ]).start();
-  }, [opacity, translateY, visible]);
+  }, [opacity, scale, translateY, visible]);
 
   const content = childrenScrollable
     ? <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">{children}</ScrollView>
@@ -47,7 +50,7 @@ export function ItiniBottomSheet({
     <Modal visible={visible} transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
       <Animated.View style={[styles.overlay, { opacity }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana" style={StyleSheet.absoluteFill} onPress={onClose} />
-        <Animated.View style={[styles.sheet, { marginBottom: Math.max(8, insets.bottom), transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.sheet, { marginBottom: Math.max(8, insets.bottom), transform: [{ translateY }, { scale }] }]}>
           <View style={styles.header}>
             <View style={[styles.iconBox, { borderColor: `${accent}44`, backgroundColor: `${accent}0D` }]}>
               <MaterialCommunityIcons name={icon} size={26} color={accent} />

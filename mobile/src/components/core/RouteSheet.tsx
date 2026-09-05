@@ -20,10 +20,10 @@ export function RouteSheet({ visible, onClose, onSelect }: { visible: boolean; o
 
   const changeFilter = (next: Filter) => {
     if (next === filter) return;
-    Animated.timing(listTransition, { toValue: 0, duration: 130, useNativeDriver: true }).start(({ finished }) => {
+    Animated.timing(listTransition, { toValue: 0, duration: 130, useNativeDriver: false }).start(({ finished }) => {
       if (!finished) return;
       setFilter(next);
-      Animated.timing(listTransition, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(listTransition, { toValue: 1, duration: 220, useNativeDriver: false }).start();
     });
   };
 
@@ -40,7 +40,7 @@ export function RouteSheet({ visible, onClose, onSelect }: { visible: boolean; o
         </View>
       </View>
 
-      <Animated.View style={[styles.list, { opacity: listTransition, transform: [{ translateY: listTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
+      <Animated.View style={[styles.list, { opacity: listTransition.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ translateY: listTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
         {results.map((destination) => (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ver ${destination.name}`} onPress={() => onSelect(destination)} style={styles.routeCard} key={destination.id}>
             <View style={styles.routeCopy}>

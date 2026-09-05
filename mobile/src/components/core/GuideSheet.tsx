@@ -15,10 +15,10 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
   const contentTransition = useRef(new Animated.Value(1)).current;
 
   const switchGuide = (guide: Guide | null) => {
-    Animated.timing(contentTransition, { toValue: 0, duration: 130, useNativeDriver: true }).start(({ finished }) => {
+    Animated.timing(contentTransition, { toValue: 0, duration: 130, useNativeDriver: false }).start(({ finished }) => {
       if (!finished) return;
       setSelected(guide);
-      Animated.timing(contentTransition, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(contentTransition, { toValue: 1, duration: 220, useNativeDriver: false }).start();
     });
   };
 
@@ -31,7 +31,7 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
 
   return (
     <ItiniBottomSheet visible={visible} onClose={onClose} title="Guías Locales" badge="DIRECTORIO · VERIFICACIÓN PENDIENTE" icon="account-group-outline" accent="#08A8F7">
-      <Animated.View style={{ opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
+      <Animated.View style={{ opacity: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }}>
       {!selected ? (
         <View style={styles.list}>
           {guides.map((guide) => (
