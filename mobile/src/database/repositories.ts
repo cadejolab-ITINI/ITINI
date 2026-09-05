@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { BudgetCategory, BudgetItem, CommunityComment, CommunityPost, Destination, Profile, SosEvent } from '@/types/domain';
+import type { BudgetCategory, BudgetItem, CommunityComment, CommunityPost, Destination, Profile, SosEvent, TripPlan } from '@/types/domain';
 import { categories, isComment, isText, moneyMinor, parseArray, textValue } from './validation';
 import { transaction } from './transactions';
 import { newId } from './ids';
@@ -275,7 +275,7 @@ async function enqueueChange(db: SQLiteDatabase, entity: string, id: string, ope
   await db.runAsync('INSERT INTO sync_queue(entity_type, entity_id, operation, payload_json, created_at) VALUES (?, ?, ?, ?, ?)', entity, id, operation, '{"version":1}', new Date().toISOString());
 }
 
-export async function createTripPlan(db: SQLiteDatabase, destinationId: string, people: number, extras: number) {
+export async function createTripPlan(db: SQLiteDatabase, destinationId: string, people: number, extras: number, details?: { transportMode: TripPlan['transportMode']; transportAmount: number; foodAmount: number; guideAmount: number }) {
   return transaction(db, async () => {
     if (!Number.isInteger(people) || people < 1 || people > 50) throw new Error('La cantidad de personas debe estar entre 1 y 50.');
     const destination = await getDestination(db, destinationId);
@@ -286,12 +286,47 @@ export async function createTripPlan(db: SQLiteDatabase, destinationId: string, 
     const total = entry * people + extraMinor;
     const createdAt = new Date().toISOString();
     const budgetId = await getActiveBudgetId(db);
-    await db.runAsync('INSERT INTO trip_plans(id, budget_id, destination_id, people, entrance_unit_minor, extras_minor, total_minor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', id, budgetId, destinationId, people, entry, extraMinor, total, createdAt);
+    const transport = details?.transportAmount ?? 0;
+    const food = details?.foodAmount ?? Math.max(0, extras);
+    const guide = details?.guideAmount ?? 0;
+    const mode = details?.transportMode ?? 'Bus';
+    await db.runAsync('INSERT INTO trip_plans(id, budget_id, destination_id, people, entrance_unit_minor, extras_minor, total_minor, created_at, transport_mode, transport_minor, food_minor, guide_minor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', id, budgetId, destinationId, people, entry, extraMinor, total, createdAt, mode, moneyMinor(transport), moneyMinor(food), moneyMinor(guide));
     const item: BudgetItem = { id: newId(), name: `Plan: ${destination.name} · ${people} persona(s) · entradas + extras`, amount: total / 100, category: 'Otro', createdAt };
     await writeBudgetItem(db, item, id);
     await enqueueChange(db, 'trip_plan', id);
     await enqueueChange(db, 'budget_item', item.id);
     return id;
+  });
+}
+
+export async function listTripPlans(db: SQLiteDatabase): Promise<TripPlan[]> {
+  const rows = await db.getAllAsync<{
+    id: string; destination_id: string; destination_name: string; people: number; total_minor: number;
+    transport_mode: TripPlan['transportMode']; status: TripPlan['status']; created_at: string;
+  }>(`SELECT p.id, p.destination_id, d.name AS destination_name, p.people, p.total_minor,
+      p.transport_mode, p.status, p.created_at
+    FROM trip_plans p JOIN destinations d ON d.id=p.destination_id
+    JOIN budgets b ON b.id=p.budget_id
+    WHERE p.deleted_at IS NULL AND b.owner_id=(SELECT value FROM app_meta WHERE key='active_profile_id')
+    ORDER BY p.created_at DESC, p.id`);
+  return rows.map(row => ({ id: row.id, destinationId: row.destination_id, destinationName: row.destination_name, people: row.people, total: row.total_minor / 100, transportMode: row.transport_mode, status: row.status, createdAt: row.created_at }));
+}
+
+export async function updateTripPlanStatus(db: SQLiteDatabase, id: string, status: TripPlan['status']) {
+  return transaction(db, async () => {
+    if (!['saved', 'in_progress', 'completed'].includes(status)) throw new Error('Estado de viaje inválido.');
+    const result = await db.runAsync('UPDATE trip_plans SET status=? WHERE id=? AND deleted_at IS NULL', status, id);
+    if (!result.changes) throw new Error('El plan de viaje no existe.');
+    await enqueueChange(db, 'trip_plan', id);
+  });
+}
+
+export async function updateLatestTripPlanStatus(db: SQLiteDatabase, destinationId: string, status: TripPlan['status']) {
+  return transaction(db, async () => {
+    const plan = await db.getFirstAsync<{ id: string }>(`SELECT p.id FROM trip_plans p JOIN budgets b ON b.id=p.budget_id WHERE p.destination_id=? AND b.owner_id=(SELECT value FROM app_meta WHERE key='active_profile_id') AND p.deleted_at IS NULL ORDER BY p.created_at DESC LIMIT 1`, destinationId);
+    if (!plan) throw new Error('No se encontró un plan para este destino.');
+    await db.runAsync('UPDATE trip_plans SET status=? WHERE id=?', status, plan.id);
+    await enqueueChange(db, 'trip_plan', plan.id);
   });
 }
 

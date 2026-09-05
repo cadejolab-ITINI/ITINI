@@ -107,3 +107,16 @@ export type BusSchedule = {
   checkedAt: string;
   verificationStatus: 'reference' | 'verified';
 };
+
+export type TripPlanStatus = 'saved' | 'in_progress' | 'completed';
+
+export type TripPlan = {
+  id: string;
+  destinationId: string;
+  destinationName: string;
+  people: number;
+  total: number;
+  transportMode: 'A pie' | 'Vehículo propio' | 'Bus';
+  status: TripPlanStatus;
+  createdAt: string;
+};

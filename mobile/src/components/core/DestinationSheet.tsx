@@ -26,12 +26,12 @@ type TransportMode = 'A pie' | 'Vehículo propio' | 'Bus';
 const transportModes: Array<{ id: TransportMode; icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string; hint: string }> = [
   { id: 'A pie', icon: 'walk', color: '#12C487', hint: 'Ideal para recorridos cercanos' },
   { id: 'Vehículo propio', icon: 'car-outline', color: '#16BDF2', hint: 'Flexibilidad para salir a tu ritmo' },
-  { id: 'Bus', icon: 'bus', color: '#F59D1D', hint: 'Transporte colectivo desde Estelí' },
+  { id: 'Bus', icon: 'bus', color: '#F59D1D', hint: 'Transporte colectivo' },
 ];
 const GUIDE_FEE = 350;
 
 export function DestinationSheet({ destination, location, locating, locationError, route, routing, routeError, offline, onClose, onLocate, onRoute, onSaved }: Props) {
-  const { addTripPlan } = useAppData();
+  const { addTripPlan, updateLatestTripPlanStatus } = useAppData();
   const [stage, setStage] = useState<'transport' | 'details' | 'planning'>('transport');
   const [transport, setTransport] = useState<TransportMode | null>(null);
   const [people, setPeople] = useState('1');
@@ -54,7 +54,7 @@ export function DestinationSheet({ destination, location, locating, locationErro
     setSaving(true);
     setError('');
     try {
-      if (!await addTripPlan(destination.id, visitors, GUIDE_FEE + transportAmount + foodAmount)) { setError('No se pudo guardar. Revisá los importes (máximo dos decimales) e intentá de nuevo.'); return; }
+      if (!await addTripPlan(destination.id, visitors, GUIDE_FEE + transportAmount + foodAmount, { transportMode: transport ?? 'Bus', transportAmount, foodAmount, guideAmount: GUIDE_FEE })) { setError('No se pudo guardar. Revisá los importes (máximo dos decimales) e intentá de nuevo.'); return; }
       setSaved(true);
     } catch { setError('No se pudo guardar. Tu plan sigue aquí; intentá de nuevo.'); }
     finally { savingLock.current = false; setSaving(false); }
@@ -105,7 +105,7 @@ export function DestinationSheet({ destination, location, locating, locationErro
           <Text style={styles.total}>{total === null ? 'Revisá la cantidad y los costos.' : `Estimado: C$ ${total.toLocaleString('es-NI')}`}</Text>
           {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
           {!saved && <Pressable accessibilityRole="button" disabled={!valid || saving} onPress={save} style={[styles.primary, (!valid || saving) && styles.disabled]}><Text style={styles.primaryText}>{saving ? 'Guardando…' : 'Guardar plan y continuar'}</Text></Pressable>}
-          {saved && <View style={styles.savedCard}><MaterialCommunityIcons name="check-circle" size={23} color="#0AA881" /><Text style={styles.savedText}>Plan guardado en tu presupuesto.</Text><Pressable onPress={onSaved} style={styles.secondary}><Text style={styles.secondaryText}>Ver en la calculadora</Text></Pressable><Pressable onPress={() => setStarted(true)} style={styles.primary}><Text style={styles.primaryText}>Iniciar mi viaje</Text></Pressable>{started && <Text style={styles.startedText}>¡Listo! Tu viaje a {destination.name} está preparado. Para sumar otro lugar, elegí otro destino en el mapa.</Text>}</View>}
+          {saved && <View style={styles.savedCard}><MaterialCommunityIcons name="check-circle" size={23} color="#0AA881" /><Text style={styles.savedText}>Plan guardado en tu presupuesto.</Text><Text style={styles.savedHint}>El guía certificado se estará contactando contigo pronto para planificar tu gira.</Text><Pressable onPress={onSaved} style={styles.secondary}><Text style={styles.secondaryText}>Ver en la calculadora</Text></Pressable><Pressable onPress={async () => { if (await updateLatestTripPlanStatus(destination.id, 'in_progress')) setStarted(true); }} style={styles.primary}><Text style={styles.primaryText}>Iniciar mi viaje</Text></Pressable>{started && <Text style={styles.startedText}>¡Listo! Tu viaje a {destination.name} está preparado. Para sumar otro lugar, elegí otro destino en el mapa.</Text>}</View>}
           {!saved && <Pressable accessibilityRole="button" disabled={saving} onPress={() => setStage('details')} style={styles.secondary}><Text style={styles.secondaryText}>Volver al destino</Text></Pressable>}
         </>}
       </View>
@@ -133,6 +133,7 @@ const styles = StyleSheet.create({
   guideAmount: { color: '#078463', fontFamily: font.extraBold, fontSize: 13 },
   savedCard: { padding: 12, borderRadius: 14, backgroundColor: '#ECFFF7', borderWidth: 1, borderColor: '#A8E7CF', gap: 9 },
   savedText: { color: '#087A5A', fontFamily: font.extraBold, fontSize: 13 },
+  savedHint: { color: '#26725B', fontFamily: font.regular, fontSize: 11, lineHeight: 16 },
   startedText: { color: '#26725B', fontFamily: font.semibold, fontSize: 11, lineHeight: 17 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   chip: { backgroundColor: '#E9F7F4', color: '#007D60', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5, fontFamily: font.bold, fontSize: 11 },
