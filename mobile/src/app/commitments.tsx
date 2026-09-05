@@ -67,7 +67,7 @@ export default function CommitmentsScreen() {
     if (enteringDemo.current) return;
     enteringDemo.current = true;
     setDemoVisible(false);
-    router.replace('/(tabs)');
+    router.replace('/auth' as never);
   };
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();

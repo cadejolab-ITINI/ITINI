@@ -2,6 +2,10 @@
 
 Aplicación Expo SDK 57 con funcionamiento offline-first.
 
+## Cuenta local
+
+Al entrar desde la pantalla de compromisos se puede iniciar sesión o crear una cuenta. Nombre, usuario, avatar y presupuestos se guardan en SQLite en el dispositivo. La contraseña nunca se guarda en texto plano: se almacena un hash SHA-256 con una sal aleatoria. Para producción se recomienda migrar la autenticación a un proveedor backend con sesiones y recuperación de cuenta.
+
 ## Ejecutar
 
 ```powershell

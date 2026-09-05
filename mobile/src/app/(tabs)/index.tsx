@@ -162,8 +162,8 @@ export default function MapScreen() {
           <View style={styles.userRow}>
             <View style={styles.avatar}><Text style={styles.avatarText}>{profile?.avatar ?? '🥾'}</Text></View>
             <View style={styles.userCopy}>
-              <Text style={styles.userName}>{profile?.name ?? 'Edgar González'}</Text>
-              <Text style={styles.username}>{profile?.username ?? '@edgar_itini'}</Text>
+              <Text style={styles.userName}>{profile?.name ?? 'Explorador ITINI'}</Text>
+              <Text style={styles.username}>{profile?.username ?? '@itini'}</Text>
             </View>
             <Pressable onPress={() => setStatusOpen((current) => !current)} style={[styles.status, offline && styles.statusOffline]} accessibilityRole="button">
               <View style={[styles.statusDot, offline && styles.statusDotOffline]} />

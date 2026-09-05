@@ -7,7 +7,8 @@ ITINI es un MVP movil de ecoturismo sostenible pensado para Android y iOS. La ap
 - App construida con Expo + React Native + TypeScript.
 - Navegacion movil con onboarding y 5 pestanas principales.
 - Mapa de Esteli con ubicacion del usuario y puntos de interes.
-- Persistencia local con SQLite para perfil, destinos, comunidad y presupuesto.
+- Persistencia local con SQLite para cuentas, perfiles, destinos, comunidad y presupuestos.
+- Registro e inicio de sesión local con usuario, contraseña protegida y avatar emoji.
 - Lectura offline de informacion clave ya guardada.
 - Fichas de destinos con dificultad, tiempos, sostenibilidad e impacto comunitario.
 - Directorio de guias certificados y panel de precios verificados.
@@ -28,7 +29,7 @@ ITINI nace como una propuesta de turismo seguro, accesible y responsable para Ni
 - Expo Router
 - TypeScript
 - Expo SQLite
-- React Native Maps
+- MapLibre Native + OpenStreetMap (y Leaflet en web)
 - Supabase como siguiente capa backend
 
 ## Estructura principal

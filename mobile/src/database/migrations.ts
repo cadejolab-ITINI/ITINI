@@ -2,8 +2,9 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { seedBudgetItems, seedCommunityPosts, seedDestinations, seedProfile } from '@/data/seed';
 import { migrateV3 } from './schema-v3';
+import { migrateV4 } from './schema-v4';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export async function migrateDatabase(db: SQLiteDatabase) {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
@@ -102,6 +103,7 @@ export async function migrateDatabase(db: SQLiteDatabase) {
 
   if (currentVersion < 2) await seedDatabase(db, currentVersion === 0);
   if (currentVersion < 3) await migrateV3(db);
+  if (currentVersion < 4) await migrateV4(db);
   const violations = await db.getAllAsync('PRAGMA foreign_key_check');
   if (violations.length) throw new Error('La base contiene relaciones inválidas. La actualización se revirtió sin borrar datos.');
   await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);

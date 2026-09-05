@@ -42,6 +42,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background }, headerTintColor: colors.text, headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false }}>
           <Stack.Screen name="index" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="commitments" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="auth" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="destination/[id]" options={{ title: 'Destino sostenible', headerBackTitle: 'Volver' }} />
           <Stack.Screen name="sos" options={{ presentation: 'modal', title: 'SOS · Modo Demo', headerBackTitle: 'Cerrar' }} />

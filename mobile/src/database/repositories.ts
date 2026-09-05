@@ -122,10 +122,17 @@ export async function insertBudgetItem(db: SQLiteDatabase, item: BudgetItem) {
   return transaction(db, async () => { await writeBudgetItem(db, item); await enqueueChange(db, 'budget_item', item.id); });
 }
 
+async function getActiveBudgetId(db: SQLiteDatabase) {
+  const row = await db.getFirstAsync<{ id: string }>("SELECT id FROM budgets WHERE owner_id=(SELECT value FROM app_meta WHERE key='active_profile_id') ORDER BY created_at, id LIMIT 1");
+  if (!row) throw new Error('No hay un presupuesto para este usuario.');
+  return row.id;
+}
+
 async function writeBudgetItem(db: SQLiteDatabase, item: BudgetItem, planId: string | null = null) {
   const name = textValue(item.name, 'Concepto', 200);
   const minor = moneyMinor(item.amount);
   if (!categories.includes(item.category)) throw new Error('Categoría de gasto inválida.');
+  const budgetId = await getActiveBudgetId(db);
   await db.runAsync(
     'INSERT INTO budget_items (id, name, amount, category, created_at, amount_minor, budget_id, plan_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     item.id,
@@ -133,7 +140,7 @@ async function writeBudgetItem(db: SQLiteDatabase, item: BudgetItem, planId: str
     minor / 100,
     item.category,
     item.createdAt,
-    minor, 'default-budget', planId, item.createdAt,
+    minor, budgetId, planId, item.createdAt,
   );
 }
 
@@ -278,7 +285,8 @@ export async function createTripPlan(db: SQLiteDatabase, destinationId: string, 
     const extraMinor = moneyMinor(extras);
     const total = entry * people + extraMinor;
     const createdAt = new Date().toISOString();
-    await db.runAsync('INSERT INTO trip_plans(id, budget_id, destination_id, people, entrance_unit_minor, extras_minor, total_minor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', id, 'default-budget', destinationId, people, entry, extraMinor, total, createdAt);
+    const budgetId = await getActiveBudgetId(db);
+    await db.runAsync('INSERT INTO trip_plans(id, budget_id, destination_id, people, entrance_unit_minor, extras_minor, total_minor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', id, budgetId, destinationId, people, entry, extraMinor, total, createdAt);
     const item: BudgetItem = { id: newId(), name: `Plan: ${destination.name} · ${people} persona(s) · entradas + extras`, amount: total / 100, category: 'Otro', createdAt };
     await writeBudgetItem(db, item, id);
     await enqueueChange(db, 'trip_plan', id);
