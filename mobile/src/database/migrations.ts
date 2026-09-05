@@ -6,9 +6,10 @@ import { migrateV4 } from './schema-v4';
 import { migrateV6 } from './schema-v6';
 import { migrateV7 } from './schema-v7';
 import { migrateV8 } from './schema-v8';
+import { migrateV9 } from './schema-v9';
 
 // Se conserva la versión 5 para que instalaciones que ya la tienen no fallen al actualizar.
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 export async function migrateDatabase(db: SQLiteDatabase) {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
@@ -111,6 +112,7 @@ export async function migrateDatabase(db: SQLiteDatabase) {
   if (currentVersion < 6) await migrateV6(db);
   if (currentVersion < 7) await migrateV7(db);
   if (currentVersion < 8) await migrateV8(db);
+  if (currentVersion < 9) await migrateV9(db);
   const violations = await db.getAllAsync('PRAGMA foreign_key_check');
   if (violations.length) throw new Error('La base contiene relaciones inválidas. La actualización se revirtió sin borrar datos.');
   await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);

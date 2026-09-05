@@ -22,10 +22,10 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
 
   const changeTab = (next: Tab) => {
     if (next === tab) return;
-    Animated.timing(contentTransition, { toValue: 0, duration: 130, useNativeDriver: true }).start(({ finished }) => {
+    Animated.timing(contentTransition, { toValue: 0, duration: 130, useNativeDriver: false }).start(({ finished }) => {
       if (!finished) return;
       setTab(next);
-      Animated.timing(contentTransition, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(contentTransition, { toValue: 1, duration: 220, useNativeDriver: false }).start();
     });
   };
 
@@ -55,8 +55,9 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
       </View>
 
       {tab === 'Verificados' && (
-        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
+        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
           <Text style={styles.helper}>Catálogo guardado. Los precios demo no están verificados:</Text>
+          {prices.length === 0 && <Text style={styles.helper}>No hay precios disponibles todavía. Cerrá y abrí esta ventana para actualizar el catálogo.</Text>}
           {prices.map((item) => (
             <View style={styles.priceCard} key={item.id}>
               <View style={styles.priceCopy}>
@@ -72,7 +73,7 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
       )}
 
       {tab === 'Calculadora' && (
-        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
+        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
           {budgetItems.map((item) => (
             <View key={item.id} style={styles.calculatorRow}>
               <Text style={[styles.priceName, { flex: 1 }]}>{item.name}</Text>
@@ -96,7 +97,7 @@ export function PriceSheet({ visible, onClose, initialTab }: { visible: boolean;
       )}
 
       {tab === 'Recomendación' && (
-        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition, transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
+        <Animated.View style={[styles.section, styles.animatedContent, { opacity: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ translateY: contentTransition.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
           <Text style={styles.helper}>Ingresá tu presupuesto total disponible:</Text>
           <View style={styles.recommendRow}>
             <TextInput value={budget} onChangeText={setBudget} placeholder="Ej. 1000 C$" placeholderTextColor="#9AA8BA" keyboardType="decimal-pad" style={[styles.input, styles.budgetInput]} />
