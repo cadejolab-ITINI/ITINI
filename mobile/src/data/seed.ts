@@ -58,7 +58,7 @@ export const seedDestinations: Destination[] = [
     id: 'estanzuela', slug: 'cascada-la-estanzuela', name: 'Cascada La Estanzuela',
     summary: 'Cascada y sendero de bosque a pocos kilómetros de Estelí.',
     description: 'Una caída de agua rodeada de vegetación y roca volcánica, ideal para una caminata corta y una visita de bajo impacto.',
-    latitude: 13.0969, longitude: -86.3650, distanceKm: 5.2, durationMinutes: 90,
+    latitude: 13.02741, longitude: -86.35318, distanceKm: 5.2, durationMinutes: 90,
     elevationGainM: 120, difficulty: 'Fácil', entranceFeeCordobas: 50, capacityDaily: 80,
     sustainabilityScore: 88, communityContributionPct: 70,
     impactSummary: 'La tarifa y el consumo local apoyan el mantenimiento del sendero y a familias de la zona.',
@@ -67,7 +67,7 @@ export const seedDestinations: Destination[] = [
     communityBenefits: ['Empleo para guías locales', 'Compra directa de alimentos', 'Mantenimiento comunitario del acceso'],
     routeCoordinates: [
       { latitude: 13.0919, longitude: -86.3538 }, { latitude: 13.0782, longitude: -86.3687 },
-      { latitude: 13.0643, longitude: -86.3822 }, { latitude: 13.0969, longitude: -86.3650 },
+      { latitude: 13.0643, longitude: -86.3822 }, { latitude: 13.02741, longitude: -86.35318 },
     ],
     verificationStatus: 'demo', updatedAt: UPDATED_AT,
   },

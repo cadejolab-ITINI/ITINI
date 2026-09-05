@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 const coordinates = [
-  { id: 'estanzuela', latitude: 13.0969, longitude: -86.3650 },
+  { id: 'estanzuela', latitude: 13.02741, longitude: -86.35318 },
   { id: 'tisey', latitude: 12.9850, longitude: -86.3703 },
   { id: 'garnacha', latitude: 12.9702631, longitude: -86.3766618 },
   { id: 'duende', latitude: 12.9712, longitude: -86.3808 },
