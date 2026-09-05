@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/ui/Screen';
@@ -8,8 +8,14 @@ import { colors, font } from '@/constants/theme';
 import { useAppData } from '@/providers/AppDataProvider';
 import type { BusTerminal } from '@/types/domain';
 
+const departments = [
+  'Boaco', 'Carazo', 'Chinandega', 'Chontales', 'Estelí', 'Granada', 'Jinotega',
+  'León', 'Madriz', 'Managua', 'Masaya', 'Matagalpa', 'Nueva Segovia', 'Rivas', 'Río San Juan',
+];
+
 export default function BusesScreen() {
   const { busTerminals, busSchedules } = useAppData();
+  const [department, setDepartment] = useState<string | null>(null);
   const schedulesByTerminal = useMemo(() => new Map(busTerminals.map(terminal => [terminal.id, busSchedules.filter(schedule => schedule.terminalId === terminal.id)])), [busSchedules, busTerminals]);
 
   return (
@@ -17,16 +23,34 @@ export default function BusesScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headingRow}>
           <View style={styles.headingIcon}><MaterialCommunityIcons name="bus" size={25} color={colors.sky} /></View>
-          <View style={styles.headingCopy}><Text style={styles.title}>Horarios de buses</Text><Text style={styles.subtitle}>Planeá tu salida desde Estelí</Text></View>
+          <View style={styles.headingCopy}><Text style={styles.title}>Horarios de buses</Text></View>
         </View>
-        <View style={styles.notice} accessibilityRole="text">
+        {!department && <>
+          <Text style={styles.sectionIntro}>Elegí un departamento para consultar sus terminales.</Text>
+          <View style={styles.departmentList}>
+            {departments.map(item => {
+              const available = item === 'Estelí';
+              return <Pressable key={item} disabled={!available} onPress={() => setDepartment(item)} accessibilityRole="button" accessibilityState={{ disabled: !available }} style={[styles.departmentRow, !available && styles.departmentDisabled]}>
+                <View style={[styles.departmentIcon, available && styles.departmentIconActive]}><MaterialCommunityIcons name={available ? 'map-marker-radius-outline' : 'lock-outline'} size={18} color={available ? colors.emerald : colors.textMuted} /></View>
+                <Text style={[styles.departmentName, !available && styles.departmentNameDisabled]}>{item}</Text>
+                <Text style={[styles.departmentStatus, available && styles.departmentStatusActive]}>{available ? 'Disponible' : 'Próximamente'}</Text>
+                {available && <MaterialCommunityIcons name="chevron-right" size={20} color={colors.emerald} />}
+              </Pressable>;
+            })}
+          </View>
+        </>}
+        {department && <>
+          <Pressable onPress={() => setDepartment(null)} accessibilityRole="button" style={styles.backButton}><MaterialCommunityIcons name="arrow-left" size={17} color={colors.sky} /><Text style={styles.backText}>Cambiar departamento</Text></Pressable>
+          <Text style={styles.departmentTitle}>{department}</Text>
+          <View style={styles.notice} accessibilityRole="text">
           <MaterialCommunityIcons name="information-outline" size={18} color={colors.orange} />
           <Text style={styles.noticeText}>Horarios de referencia. Pueden cambiar por temporada; confirmá en la terminal antes de viajar.</Text>
-        </View>
+          </View>
 
-        {busTerminals.map(terminal => <TerminalCard key={terminal.id} terminal={terminal} schedules={schedulesByTerminal.get(terminal.id) ?? []} />)}
-        {busTerminals.length === 0 && <View style={styles.empty}><MaterialCommunityIcons name="bus-alert" size={30} color={colors.textMuted} /><Text style={styles.emptyTitle}>Aún no hay horarios guardados</Text><Text style={styles.emptyText}>Con conexión, actualizá el catálogo para descargar la información.</Text></View>}
-        <View style={styles.offlineNote}><MaterialCommunityIcons name="database-check-outline" size={18} color={colors.emerald} /><Text style={styles.offlineText}>Disponible sin internet · guardado en tu dispositivo</Text></View>
+          {busTerminals.map(terminal => <TerminalCard key={terminal.id} terminal={terminal} schedules={schedulesByTerminal.get(terminal.id) ?? []} />)}
+          {busTerminals.length === 0 && <View style={styles.empty}><MaterialCommunityIcons name="bus-alert" size={30} color={colors.textMuted} /><Text style={styles.emptyTitle}>Aún no hay horarios guardados</Text><Text style={styles.emptyText}>Con conexión, actualizá el catálogo para descargar la información.</Text></View>}
+          <View style={styles.offlineNote}><MaterialCommunityIcons name="database-check-outline" size={18} color={colors.emerald} /><Text style={styles.offlineText}>Disponible sin internet · guardado en tu dispositivo</Text></View>
+        </>}
       </ScrollView>
     </Screen>
   );
@@ -60,7 +84,19 @@ const styles = StyleSheet.create({
   headingIcon: { width: 45, height: 45, borderRadius: 14, borderWidth: 1, borderColor: '#245277', backgroundColor: '#0D2741', alignItems: 'center', justifyContent: 'center' },
   headingCopy: { flex: 1 },
   title: { color: colors.text, fontFamily: font.black, fontSize: 22 },
-  subtitle: { marginTop: 2, color: colors.textMuted, fontFamily: font.regular, fontSize: 11 },
+  sectionIntro: { color: colors.textMuted, fontFamily: font.regular, fontSize: 11, lineHeight: 17 },
+  departmentList: { borderRadius: 16, borderWidth: 1, borderColor: '#223B57', backgroundColor: '#111C30', paddingHorizontal: 12 },
+  departmentRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderBottomColor: '#21354D' },
+  departmentDisabled: { opacity: 0.65 },
+  departmentIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#1D2A40', alignItems: 'center', justifyContent: 'center' },
+  departmentIconActive: { backgroundColor: 'rgba(19,184,109,0.14)' },
+  departmentName: { flex: 1, color: colors.text, fontFamily: font.extraBold, fontSize: 12 },
+  departmentNameDisabled: { color: '#A2B0C0' },
+  departmentStatus: { color: '#71839B', fontFamily: font.semibold, fontSize: 9 },
+  departmentStatusActive: { color: colors.emerald },
+  backButton: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
+  backText: { color: colors.sky, fontFamily: font.bold, fontSize: 10 },
+  departmentTitle: { color: colors.text, fontFamily: font.black, fontSize: 19 },
   notice: { borderRadius: 13, borderWidth: 1, borderColor: 'rgba(245,157,29,0.35)', backgroundColor: 'rgba(245,157,29,0.1)', padding: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   noticeText: { flex: 1, color: '#E9D5AE', fontFamily: font.semibold, fontSize: 10, lineHeight: 15 },
   terminalCard: { borderRadius: 17, borderWidth: 1, borderColor: '#223B57', backgroundColor: '#111C30', padding: 14, gap: 8 },

@@ -42,7 +42,5 @@ export const busSchedules: BusSchedule[] = [
   reference('sur-managua-0845', 'cotran-sur', 'Cotran Sur', 'Managua · Mercado El Mayoreo', '08:45 a. m.', 'Expreso · Moreno', 110, 144, 'Tarifa publicada: C$110 por persona.', 'https://estelibuses.web.app/terminal-sur-esteli/horarios-esteli-managua'),
   reference('sur-matagalpa-0515', 'cotran-sur', 'Cotran Sur', 'Matagalpa', '05:15 a. m.', 'Ruteado', 45, 90, 'Tarifa publicada: C$45 por persona.', 'https://estelibuses.web.app/terminal-sur-esteli/horarios-esteli-matagalpa'),
   reference('sur-matagalpa-0615', 'cotran-sur', 'Cotran Sur', 'Matagalpa', '06:15 a. m.', 'Ruteado', 45, 90, 'Tarifa publicada: C$45 por persona.', 'https://estelibuses.web.app/terminal-sur-esteli/horarios-esteli-matagalpa'),
-  reference('sur-leon-0500', 'cotran-sur', 'Cotran Sur', 'León', '05:00 a. m.', 'Ruteado', null, 150, 'Precio no publicado.', 'https://estelibuses.web.app/terminal-sur-esteli/horarios-esteli-leon'),
-  reference('sur-leon-0645', 'cotran-sur', 'Cotran Sur', 'León', '06:45 a. m.', 'Expreso · Acuña', null, 126, 'Precio no publicado.', 'https://estelibuses.web.app/terminal-sur-esteli/horarios-esteli-leon'),
-  reference('sur-tisey-0630', 'cotran-sur', 'Cotran Sur', 'Tisey · La Estanzuela', '06:30 a. m.', 'Ruteado', null, null, 'Precio no publicado; confirmar antes de salir.', 'https://estelibuses.web.app/terminal-sur-esteli/horarios-esteli-tisey-la-estanzuela'),
+  reference('sur-tisey-0630', 'cotran-sur', 'Cotran Sur', 'Tisey · La Estanzuela', '06:30 a. m.', 'Ruteado', 30, null, 'Tarifa indicada para salir desde Estelí: C$30 por persona.', 'https://estelibuses.web.app/terminal-sur-esteli/horarios-esteli-tisey-la-estanzuela'),
 ];
